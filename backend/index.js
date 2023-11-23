@@ -39,16 +39,44 @@ app.get('/rooms', async (req,res)=>{
     const rooms = await Room.find();
     res.json(rooms).status(200)
   }catch(e){
-    res.json({error:`error processing on /rooms route ${e}`}).status(500)
+    res.json({error:`error processing on /rooms get route ${e}`}).status(500)
   }
 })
 
 app.get('/users', async (req,res)=>{
   try{
-    const users = await User.find();
+    const users = await User.find().populate('rooms');
     res.json(users).status(200)
   }catch(e){
-    res.json({error:`error processing on /users route ${e}`}).status(500)
+    res.json({error:`error processing on /users get route ${e}`}).status(500)
+  }
+})
+
+app.post('/room',async (req,res)=>{
+  try{
+    const roomsCount = await Room.countDocuments()
+    const newRoom = new Room({roomNumber:roomsCount})
+    await newRoom.save()
+    res.json(newRoom).status(200)
+  }catch(e){
+    res.json({error:`error processing on /room post route ${e}`}).status(500)
+  }
+})
+
+app.post('/user',async (req,res)=>{
+  try{
+    const username = req.body.username
+    const existingUser = await User.findOne({username})
+
+    if(existingUser) {
+      return res.json({error:`user with ${username} already exist`}).status(400)
+    }
+
+    const newUser = new User({username})
+    await newUser.save()
+    res.json(newUser).status(200)
+  }catch(e){
+    res.json({error:`error processing on /user post route ${e}`}).status(500)
   }
 })
 
