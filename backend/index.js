@@ -5,6 +5,9 @@ import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import db from './db/db.connection.js';
+//seperate exports into routes/controller dir
+import Room from './models/Room.js';
+import User from './models/User.js';
 
 dotenv.config();
 
@@ -22,13 +25,32 @@ const io = new Server(server, {
 });
 
 app.get('/', async (req, res) => {
-  let collection = await db.collection("posts");
+  let collection = db.collection("posts");
   let results = await collection.find({})
     .limit(50)
     .toArray();
   res.send(results).status(200);
   // res.sendFile(__dirname + '/index.html');
 });
+
+//seperate into routes/controller dir
+app.get('/rooms', async (req,res)=>{
+  try{
+    const rooms = await Room.find();
+    res.json(rooms).status(200)
+  }catch(e){
+    res.json({error:`error processing on /rooms route ${e}`}).status(500)
+  }
+})
+
+app.get('/users', async (req,res)=>{
+  try{
+    const users = await User.find();
+    res.json(users).status(200)
+  }catch(e){
+    res.json({error:`error processing on /users route ${e}`}).status(500)
+  }
+})
 
 db.once('connected', () => {
   console.log('DB connected')
