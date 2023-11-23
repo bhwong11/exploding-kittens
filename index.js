@@ -22,7 +22,7 @@ const io = new Server(server, {
 });
 
 app.get('/', async (req, res) => {
-  let collection = await db.collection("posts");
+  let collection = await db.collection("users");
   let results = await collection.find({})
     .limit(50)
     .toArray();
@@ -30,9 +30,9 @@ app.get('/', async (req, res) => {
   // res.sendFile(__dirname + '/index.html');
 });
 
-db.once('connected', () => {
-  console.log('DB connected')
-})
+// db.once('connected', () => {
+//   console.log('DB connected')
+// })
 
 io.on('connection', (socket) => {
   console.log('a player connected');
