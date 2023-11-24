@@ -8,6 +8,8 @@ import db from './db/db.connection.js';
 //seperate exports into routes/controller dir
 import Room from './models/Room.js';
 import User from './models/User.js';
+import routes from './routes/index.js';
+import { generateRoutes } from './helpers/index.js';
 
 dotenv.config();
 
@@ -34,14 +36,14 @@ app.get('/', async (req, res) => {
 });
 
 //seperate into routes/controller dir
-app.get('/rooms', async (req,res)=>{
-  try{
-    const rooms = await Room.find();
-    res.json(rooms).status(200)
-  }catch(e){
-    res.json({error:`error processing on /rooms get route ${e}`}).status(500)
-  }
-})
+// app.get('/rooms', async (req,res)=>{
+//   try{
+//     const rooms = await Room.find();
+//     res.json(rooms).status(200)
+//   }catch(e){
+//     res.json({error:`error processing on /rooms get route ${e}`}).status(500)
+//   }
+// })
 
 app.get('/users', async (req,res)=>{
   try{
@@ -51,6 +53,8 @@ app.get('/users', async (req,res)=>{
     res.json({error:`error processing on /users get route ${e}`}).status(500)
   }
 })
+
+generateRoutes(routes,app)
 
 app.post('/room',async (req,res)=>{
   try{
