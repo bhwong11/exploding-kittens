@@ -3,9 +3,13 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+import db from './db/db.connection.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -17,9 +21,18 @@ const io = new Server(server, {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+app.get('/', async (req, res) => {
+  let collection = await db.collection("posts");
+  let results = await collection.find({})
+    .limit(50)
+    .toArray();
+  res.send(results).status(200);
+  // res.sendFile(__dirname + '/index.html');
 });
+
+db.once('connected', () => {
+  console.log('DB connected')
+})
 
 io.on('connection', (socket) => {
   console.log('a player connected');
