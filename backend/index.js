@@ -5,6 +5,9 @@ import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import db from './db/db.connection.js';
+//seperate exports into routes/controller dir
+import routes from './routes/index.js';
+import { generateRoutes } from './helpers/index.js';
 
 dotenv.config();
 
@@ -22,13 +25,15 @@ const io = new Server(server, {
 });
 
 app.get('/', async (req, res) => {
-  let collection = await db.collection("posts");
+  let collection = db.collection("posts");
   let results = await collection.find({})
     .limit(50)
     .toArray();
   res.send(results).status(200);
   // res.sendFile(__dirname + '/index.html');
 });
+
+generateRoutes(routes,app)
 
 db.once('connected', () => {
   console.log('DB connected')

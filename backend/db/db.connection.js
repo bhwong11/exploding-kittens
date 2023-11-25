@@ -5,7 +5,14 @@ dotenv.config()
 
 const connString = process.env.DB_URI;
 
-mongoose.connect(connString);
+mongoose.connect(connString)
+  .then(() => {
+    console.log('Connected to MongoDB via mongoose');
+  })
+  .catch((error) => {
+    console.error('Error connecting to MongoDB:', error);
+  });
+
 const db = mongoose.connection;
 
 export default db;
