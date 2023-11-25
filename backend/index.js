@@ -8,6 +8,7 @@ import db from './db/db.connection.js';
 //seperate exports into routes/controller dir
 import routes from './routes/index.js';
 import { generateRoutes } from './helpers/index.js';
+import cors from 'cors'
 
 dotenv.config();
 
@@ -23,6 +24,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+
+app.use(cors())
 
 app.get('/', async (req, res) => {
   let collection = db.collection("posts");
@@ -44,6 +47,12 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('a player disconnected');
   });
+  socket.on('new-page',(data)=>{
+    console.log('new page backend recieved',data)
+    socket.emit('new-page-backend',{
+      message:'sent from backend'
+    })
+  })
 });
 
 server.listen(port, () => {
