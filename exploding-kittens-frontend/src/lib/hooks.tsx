@@ -42,7 +42,7 @@ export const useActivateResponseHandlers=()=>{
   useEffect(()=>{
     if(!socket) return
     socket?.on('activate-attempt',(data)=>{
-      console.log('SHOW')
+      console.log('SHOW',(allowedResponse!==data.action), currentActions)
       if(
         !setCurrentActions
         || ((allowedResponse!==data.action) && (currentActions?.length || 0)>0)
