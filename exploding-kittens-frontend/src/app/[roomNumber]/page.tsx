@@ -1,7 +1,9 @@
 "use client"
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState, useRef } from "react"
 import { PlayerContext } from "@/context/players"
-import { io } from "socket.io-client"
+import { io, Socket } from "socket.io-client"
+import { useInitializePlayerSocket } from "@/lib/hooks"
+import { useGameStateContext } from "@/context/gameState"
 
 
 type RoomParams = {
@@ -10,39 +12,38 @@ type RoomParams = {
   }
 }
 
-type user = {
-  wins?: number
-  rooms?: []
-  _id?: string
-  id?: number
-  username?: string
-}
-
 const Room = ({params}:RoomParams)=>{
   const playerContext = useContext(PlayerContext)
-  const [users,setUsers] = useState<user | null>(null)
+  const [users,setUsers] = useState<User | null>(null)
+
+  useInitializePlayerSocket('test-user-1')
+  const {socket} = useGameStateContext() || {}
+  const preSocketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null)
+
   useEffect(()=>{
-    //add to .env
-    const socket = io('http://localhost:3000/')
-    socket.emit('new-page',{
+    //makes sure we don't double add listeners
+    //can make this a helper hook to reduce boilerplate
+    if(!socket || preSocketRef.current) return
+    socket?.emit('new-page',{
       message:'new page!!'
     })
 
-    socket.on('new-page-backend',(data:{
+    socket?.on('new-page-backend',(data:{
       message:string
     })=>{
       console.log('new-page-backend!!',data)
     })
+    preSocketRef.current = socket || null
     return () => {
-      socket.disconnect();
+      socket?.disconnect();
     }
-  },[])
+  },[socket])
 
   useEffect(()=>{
     //add to .env
     fetch('http://localhost:3000/users')
       .then((res)=>res.json())
-      .then((data:user)=>{
+      .then((data:User)=>{
         setUsers(data)
       })
   },[])

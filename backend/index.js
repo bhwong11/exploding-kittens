@@ -43,15 +43,19 @@ db.once('connected', () => {
 })
 
 io.on('connection', (socket) => {
-  console.log('a player connected');
-  socket.on('disconnect', () => {
-    console.log('a player disconnected');
+  console.log('a player connected',socket.id);
+  socket.on('disconnect', (data) => {
+    console.log('a player disconnected',data);
   });
   socket.on('new-page',(data)=>{
     console.log('new page backend recieved',data)
     socket.emit('new-page-backend',{
       message:'sent from backend'
     })
+  })
+
+  socket.on('activate-attempt',(data)=>{
+    socket.emit('activate-attempt',data)
   })
 });
 
