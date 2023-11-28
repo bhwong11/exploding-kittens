@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { PlayerContextProvider } from '@/context/players'
+import { GameStateContextProvider } from '@/context/gameState'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,7 +20,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <PlayerContextProvider>
+          <GameStateContextProvider>
           {children}
+          </GameStateContextProvider>
         </PlayerContextProvider>
       </body>
     </html>
