@@ -4,6 +4,8 @@ import { PlayerContext } from "@/context/players"
 import { io, Socket } from "socket.io-client"
 import { useInitializePlayerSocket } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
+import { useActivateResponseHandlers } from "@/lib/hooks"
+import { actionTypes } from "@/data"
 
 
 type RoomParams = {
@@ -15,15 +17,21 @@ type RoomParams = {
 const Room = ({params}:RoomParams)=>{
   const playerContext = useContext(PlayerContext)
   const [users,setUsers] = useState<User | null>(null)
+  const {
+    attemptActivate,
+    allowedResponse,
+    showResponsePrompt,
+    sendNoResponse,
+    currentActions,
+    noResponses
+  } = useActivateResponseHandlers()
 
   useInitializePlayerSocket('test-user-1')
   const {socket} = useGameStateContext() || {}
-  const preSocketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null)
 
   useEffect(()=>{
-    //makes sure we don't double add listeners
+    //preSocketRef.current makes sure we don't double add listeners
     //can make this a helper hook to reduce boilerplate
-    if(!socket || preSocketRef.current) return
     socket?.emit('new-page',{
       message:'new page!!'
     })
@@ -33,7 +41,6 @@ const Room = ({params}:RoomParams)=>{
     })=>{
       console.log('new-page-backend!!',data)
     })
-    preSocketRef.current = socket || null
     return () => {
       socket?.disconnect();
     }
@@ -61,6 +68,22 @@ const Room = ({params}:RoomParams)=>{
       }}>
         add player
       </button>
+      <div>
+        <h1>TEST {JSON.stringify(currentActions)} no response:{noResponses}</h1>
+        <button onClick={()=>attemptActivate(actionTypes.shuffle)}>
+          shuffle
+        </button>
+        {showResponsePrompt && (
+          <div>
+          <button onClick={()=>attemptActivate(actionTypes.nope)}>
+            send nope {JSON.stringify(allowedResponse)}
+          </button>
+          <button onClick={()=>sendNoResponse()}>
+            no response
+          </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

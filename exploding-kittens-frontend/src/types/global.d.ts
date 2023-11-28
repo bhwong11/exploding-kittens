@@ -1,3 +1,5 @@
+import { actionTypes } from "@/data/index"
+import { cardTypes } from "@/data/index"
 export {}
 
 declare global{
@@ -12,21 +14,37 @@ declare global{
     id:number
     color: string
     image: string
-    type: typeof import("@/data/index").cardTypes[keyof typeof import("@/data/index").cardTypes]
+    type: typeof cardTypes[keyof typeof cardTypes]["type"]
   }
-  type Actions = typeof import("@/data/index").actionTypes[keyof typeof import("@/data/index").actionTypes]
+  type Actions = typeof actionTypes[keyof typeof actionTypes]
+  type ResponseActions = Actions["nope"] | Actions["diffuse"]
   type Player = {
     username: string
-    loss: boolean
+    lose: boolean
     cards: Card[]
   }
   //socket.io event types
   interface ServerToClientEvents {
-    ['new-page-backend']: (arg:{message:string}) => void;
+    ['new-page-backend']: (arg:{message:string}) => void
+    ['activate-attempt']: (arg:{
+      action:Actions,
+      allowedResponse: ResponseActions,
+      allowedUsers: string[]
+    }) => void
+    ['no-response']: () => void
+    ['new-player']: (arg:{
+      username:string
+    }) => void
   }
   
   interface ClientToServerEvents {
-    ['new-page']: (arg:{message:string}) => void;
-    ['new-player']: (arg:{username:string}) => void;
+    ['new-page']: (arg:{message:string}) => void
+    ['new-player']: (arg:{username:string}) => void
+    ['activate-attempt']: (arg:{
+      action:Actions | null,
+      allowedResponse: ResponseActions,
+      allowedUsers: string[]
+    }) => void
+    ['no-response']: () => void
   }
 }
