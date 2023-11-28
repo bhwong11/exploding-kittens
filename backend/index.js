@@ -55,7 +55,16 @@ io.on('connection', (socket) => {
   })
 
   socket.on('activate-attempt',(data)=>{
-    socket.emit('activate-attempt',data)
+    console.log('activate-attempt',data)
+    io.sockets.emit('activate-attempt',data)
+  })
+  socket.on('new-player',(data)=>{
+    console.log('new-player',data)
+    io.sockets.emit('new-player',data)
+  })
+  socket.on('no-response',()=>{
+    console.log('no-response')
+    io.sockets.emit('no-response')
   })
 });
 

@@ -5,7 +5,8 @@ export const useActions = ()=>{
   const { setCurrentActions } = useGameStateContext() || {}
   
   const nopeAction = () =>{
-    if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
+    console.log('activate nope')
+    if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length))
   }
 
 type ActionImpl =  {
@@ -20,7 +21,9 @@ type ActionImpl =  {
     [actionTypes.multiple3]:()=>null,
     [actionTypes.nope]:nopeAction,
     [actionTypes.seeTheFuture]:()=>null,
-    [actionTypes.shuffle]:()=>null,
+    [actionTypes.shuffle]:()=>{
+      console.log('shuffle')
+    },
     [actionTypes.skip]:()=>null,
   }
 
