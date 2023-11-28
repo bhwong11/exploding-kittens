@@ -77,7 +77,7 @@ export const cardTypes = {
     count: 4,
     color: 'blue'
   },
-}as const
+} as const
 
 
 export const actionTypes = {
