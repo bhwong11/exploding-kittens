@@ -1,11 +1,11 @@
 "use client"
-import { useContext, useEffect, useState, useRef } from "react"
-import { PlayerContext } from "@/context/players"
-import { io, Socket } from "socket.io-client"
+import {useEffect, useState } from "react"
+import { usePlayerContext } from "@/context/players"
 import { usePlayerSocket } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
-import { useActivateResponseHandlers } from "@/lib/hooks"
+import { useActivateResponseHandlers,useInitGame } from "@/lib/hooks"
 import { actionTypes } from "@/data"
+import { Hand } from "@/app/[roomNumber]/hand"
 
 
 type RoomParams = {
@@ -15,7 +15,9 @@ type RoomParams = {
 }
 
 const Room = ({params}:RoomParams)=>{
-  const playerContext = useContext(PlayerContext)
+  const playerContext = usePlayerContext()
+  const {socket,deck,} = useGameStateContext() || {}
+
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
 
@@ -28,9 +30,9 @@ const Room = ({params}:RoomParams)=>{
     currentActions,
     noResponses
   } = useActivateResponseHandlers()
+  const {createGameAssets} = useInitGame()
 
-  const {joinRoom}= usePlayerSocket()
-  const {socket} = useGameStateContext() || {}
+  const {joinRoom, clearPlayers}= usePlayerSocket()
 
   useEffect(()=>{
     //preSocketRef.current makes sure we don't double add listeners
@@ -64,21 +66,25 @@ const Room = ({params}:RoomParams)=>{
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
       <div className="border border-black">
-        <h1>TEST Hook {JSON.stringify(currentActions)} no response:{noResponses}</h1>
-        <button onClick={()=>attemptActivate(actionTypes.shuffle)}>
+        <h1>
+          TEST Hook(To get this to work, you need to have 2 joined users with different usernames)
+          {JSON.stringify(currentActions)} no response:{noResponses}
+        </h1>
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.shuffle)}>
           shuffle
         </button>
         {showResponsePrompt && (
           <div>
-          <button onClick={()=>attemptActivate(actionTypes.nope)}>
+          <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
             send nope {JSON.stringify(allowedResponse)}
           </button>
-          <button onClick={()=>sendNoResponse()}>
+          <button className="btn btn-blue" onClick={()=>sendNoResponse()}>
             no response
           </button>
           </div>
         )}
       </div>
+
       <div className="border border-black">
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
@@ -101,7 +107,21 @@ const Room = ({params}:RoomParams)=>{
             join room
           </button>
         </form>
+        <button onClick={clearPlayers} className="btn btn-blue">
+            clear players
+        </button>
       </div>
+
+      <div className="border border-black">
+        <Hand/>
+        <div className="h-[15rem] overflow-y-scroll">
+          {JSON.stringify(deck)}
+        </div>
+        <button onClick={createGameAssets} className="btn btn-blue">
+            create game assets
+        </button>
+      </div>
+
     </div>
   )
 }
