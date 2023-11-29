@@ -2,7 +2,7 @@
 import { useContext, useEffect, useState, useRef } from "react"
 import { PlayerContext } from "@/context/players"
 import { io, Socket } from "socket.io-client"
-import { useInitializePlayerSocket } from "@/lib/hooks"
+import { usePlayerSocketInitAndListen } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers } from "@/lib/hooks"
 import { actionTypes } from "@/data"
@@ -26,7 +26,7 @@ const Room = ({params}:RoomParams)=>{
     noResponses
   } = useActivateResponseHandlers()
 
-  useInitializePlayerSocket('test-user-1')
+  usePlayerSocketInitAndListen('test-user-1')
   const {socket} = useGameStateContext() || {}
 
   useEffect(()=>{

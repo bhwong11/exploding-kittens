@@ -28,6 +28,8 @@ declare global{
     ['new-page-backend']: (arg:{message:string}) => void
     ['activate-attempt']: (arg:{
       action:Actions,
+      newAllowedResponse: ResponseActions,
+      newAllowedUsers: string[],
       allowedResponse: ResponseActions,
       allowedUsers: string[]
     }) => void
@@ -42,6 +44,8 @@ declare global{
     ['new-player']: (arg:{username:string}) => void
     ['activate-attempt']: (arg:{
       action:Actions | null,
+      newAllowedResponse: ResponseActions,
+      newAllowedUsers: string[],
       allowedResponse: ResponseActions,
       allowedUsers: string[]
     }) => void
