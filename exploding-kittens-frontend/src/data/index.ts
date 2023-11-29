@@ -92,3 +92,8 @@ export const actionTypes = {
   multiple2:'multiple-2',
   multiple3:'multiple-3',
  } as const
+
+
+ export const socketEvents = {
+  newPageBackend:'new-page-backend'
+ } as const

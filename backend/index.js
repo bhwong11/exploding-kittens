@@ -42,8 +42,11 @@ db.once('connected', () => {
   console.log('DB connected')
 })
 
+const players = []
+
 io.on('connection', (socket) => {
   console.log('a player connected',socket.id);
+  socket.emit('all-players',players)
   socket.on('disconnect', (data) => {
     console.log('a player disconnected',data);
   });
@@ -54,14 +57,24 @@ io.on('connection', (socket) => {
     })
   })
 
+  socket.on('new-player',(data)=>{
+    console.log('new-player',data)
+    const existingPlayer = players.find(player=>player.username===data?.username)
+    if(!existingPlayer){
+      players.push({
+        ...data,
+        lose:false,
+        cards:[]
+      })
+    }
+    io.sockets.emit('all-players',players)
+  })
+
   socket.on('activate-attempt',(data)=>{
     console.log('activate-attempt',data)
     io.sockets.emit('activate-attempt',data)
   })
-  socket.on('new-player',(data)=>{
-    console.log('new-player',data)
-    io.sockets.emit('new-player',data)
-  })
+
   socket.on('no-response',()=>{
     console.log('no-response')
     io.sockets.emit('no-response')

@@ -2,7 +2,7 @@
 import { useContext, useEffect, useState, useRef } from "react"
 import { PlayerContext } from "@/context/players"
 import { io, Socket } from "socket.io-client"
-import { usePlayerSocketInitAndListen } from "@/lib/hooks"
+import { usePlayerSocket } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers } from "@/lib/hooks"
 import { actionTypes } from "@/data"
@@ -17,6 +17,9 @@ type RoomParams = {
 const Room = ({params}:RoomParams)=>{
   const playerContext = useContext(PlayerContext)
   const [users,setUsers] = useState<User | null>(null)
+  const [username,setUsername] = useState<string>("")
+
+
   const {
     attemptActivate,
     allowedResponse,
@@ -26,7 +29,7 @@ const Room = ({params}:RoomParams)=>{
     noResponses
   } = useActivateResponseHandlers()
 
-  usePlayerSocketInitAndListen('test-user-1')
+  const {joinRoom}= usePlayerSocket()
   const {socket} = useGameStateContext() || {}
 
   useEffect(()=>{
@@ -60,16 +63,8 @@ const Room = ({params}:RoomParams)=>{
       Room Number: {params.roomNumber}
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
-      <button onClick={()=>{
-        playerContext?.setPlayers(prev=>[
-          ...prev,
-          {username:`user ${prev.length}`}
-        ])
-      }}>
-        add player
-      </button>
-      <div>
-        <h1>TEST {JSON.stringify(currentActions)} no response:{noResponses}</h1>
+      <div className="border border-black">
+        <h1>TEST Hook {JSON.stringify(currentActions)} no response:{noResponses}</h1>
         <button onClick={()=>attemptActivate(actionTypes.shuffle)}>
           shuffle
         </button>
@@ -83,6 +78,29 @@ const Room = ({params}:RoomParams)=>{
           </button>
           </div>
         )}
+      </div>
+      <div className="border border-black">
+        <h1>join room</h1>
+        <form onSubmit={(e:React.FormEvent)=>{
+          e.preventDefault()
+          joinRoom(username)
+          setUsername("")
+        }}>
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+            Username
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="username"
+            type="text"
+            placeholder="Username"
+            onChange={(e:React.ChangeEvent<HTMLInputElement>)=>setUsername(e.target.value)}
+            value={username}
+          />
+          <button type="submit" className="btn btn-blue">
+            join room
+          </button>
+        </form>
       </div>
     </div>
   )

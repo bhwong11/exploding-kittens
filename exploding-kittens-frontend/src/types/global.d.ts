@@ -37,6 +37,7 @@ declare global{
     ['new-player']: (arg:{
       username:string
     }) => void
+    ['all-players']: (arg:Player[]) => void
   }
   
   interface ClientToServerEvents {
