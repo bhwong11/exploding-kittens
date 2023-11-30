@@ -115,10 +115,11 @@ const Room = ({params}:RoomParams)=>{
       <div className="border border-black">
         <Hand/>
         <div className="h-[15rem] overflow-y-scroll">
+          Deck:
           {JSON.stringify(deck)}
         </div>
         <button onClick={createGameAssets} className="btn btn-blue">
-            create game assets
+            create game assets(need at least one joined user for this to work)
         </button>
       </div>
 

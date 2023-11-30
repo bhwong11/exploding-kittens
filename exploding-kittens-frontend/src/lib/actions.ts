@@ -13,6 +13,7 @@ type ActionImpl =  {
     [key in Actions]: Function
   }
   const actions:ActionImpl  = {
+    //make this objects with an impl method
     [actionTypes.attack]:()=>null,
     [actionTypes.diffuse]:()=>null,
     [actionTypes.exploding]:()=>null,
