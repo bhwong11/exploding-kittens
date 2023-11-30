@@ -43,10 +43,16 @@ db.once('connected', () => {
   console.log('DB connected')
 })
 
+let players = []
+let deck = []
+
 io.on('connection', (socket) => {
   console.log('a player connected',socket.id);
-  socket.on('disconnect', (data) => {
-    console.log('a player disconnected',data);
+  socket.emit('all-players',players)
+  socket.on('disconnect', () => {
+    players = players.filter(player=>player.socketId!==socket.id)
+    console.log('a player disconnected',socket.id,players);
+    io.sockets.emit('all-players',players)
   });
   socket.on('new-page',(data)=>{
     console.log('new page backend recieved',data)
@@ -55,14 +61,43 @@ io.on('connection', (socket) => {
     })
   })
 
+  socket.on('new-player',(data)=>{
+
+    const existingPlayerIndex = players.findIndex(player=>player.username===data?.username)
+
+    if(existingPlayerIndex===-1){
+      players.push({
+        ...data,
+        socketId: socket.id,
+        lose:false,
+        cards:[]
+      })
+    }
+    io.sockets.emit('all-players',players)
+  })
+
+  socket.on('deck',(data)=>{
+    console.log('deck',data)
+    deck = data
+    io.sockets.emit('deck',deck)
+  })
+
+  socket.on('all-players',(data)=>{
+    console.log('all-players',data)
+    io.sockets.emit('all-players',data)
+  })
+
+  socket.on('clear-players',()=>{
+    console.log('clear-players')
+    players = []
+    io.sockets.emit('all-players',players)
+  })
+
   socket.on('activate-attempt',(data)=>{
     console.log('activate-attempt',data)
     io.sockets.emit('activate-attempt',data)
   })
-  socket.on('new-player',(data)=>{
-    console.log('new-player',data)
-    io.sockets.emit('new-player',data)
-  })
+
   socket.on('no-response',()=>{
     console.log('no-response')
     io.sockets.emit('no-response')

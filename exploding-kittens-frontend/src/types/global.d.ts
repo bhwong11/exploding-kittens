@@ -10,11 +10,12 @@ declare global{
     id?: number
     username?: string
   }
+  type CardType = typeof cardTypes[keyof typeof cardTypes]["type"]
   type Card = {
     id:number
     color: string
     image: string
-    type: typeof cardTypes[keyof typeof cardTypes]["type"]
+    type: CardType
   }
   type Actions = typeof actionTypes[keyof typeof actionTypes]
   type ResponseActions = Actions["nope"] | Actions["diffuse"]
@@ -28,6 +29,8 @@ declare global{
     ['new-page-backend']: (arg:{message:string}) => void
     ['activate-attempt']: (arg:{
       action:Actions,
+      newAllowedResponse: ResponseActions,
+      newAllowedUsers: string[],
       allowedResponse: ResponseActions,
       allowedUsers: string[]
     }) => void
@@ -35,16 +38,23 @@ declare global{
     ['new-player']: (arg:{
       username:string
     }) => void
+    ['all-players']: (arg:Player[]) => void
+    ['deck']: (arg:Card[]) => void
   }
   
   interface ClientToServerEvents {
     ['new-page']: (arg:{message:string}) => void
     ['new-player']: (arg:{username:string}) => void
+    ['all-players']: (arg:Player[]) => void
     ['activate-attempt']: (arg:{
       action:Actions | null,
+      newAllowedResponse: ResponseActions,
+      newAllowedUsers: string[],
       allowedResponse: ResponseActions,
       allowedUsers: string[]
     }) => void
     ['no-response']: () => void
+    ['clear-players']: () => void
+    ['deck']: (arg:Card[]) => void
   }
 }
