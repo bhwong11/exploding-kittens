@@ -26,6 +26,7 @@ const io = new Server(server, {
 });
 
 app.use(cors())
+app.use(express.json())
 
 app.get('/', async (req, res) => {
   let collection = db.collection("posts");
