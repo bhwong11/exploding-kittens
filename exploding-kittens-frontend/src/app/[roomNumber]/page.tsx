@@ -1,11 +1,11 @@
 "use client"
-import { useContext, useEffect, useState, useRef } from "react"
-import { PlayerContext } from "@/context/players"
-import { io, Socket } from "socket.io-client"
-import { useInitializePlayerSocket } from "@/lib/hooks"
+import {useEffect, useState } from "react"
+import { usePlayerContext } from "@/context/players"
+import { usePlayerSocket } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
-import { useActivateResponseHandlers } from "@/lib/hooks"
+import { useActivateResponseHandlers,useInitGame } from "@/lib/hooks"
 import { actionTypes } from "@/data"
+import { Hand } from "@/app/[roomNumber]/hand"
 
 
 type RoomParams = {
@@ -15,8 +15,13 @@ type RoomParams = {
 }
 
 const Room = ({params}:RoomParams)=>{
-  const playerContext = useContext(PlayerContext)
+  const playerContext = usePlayerContext()
+  const {socket,deck,} = useGameStateContext() || {}
+
   const [users,setUsers] = useState<User | null>(null)
+  const [username,setUsername] = useState<string>("")
+
+
   const {
     attemptActivate,
     allowedResponse,
@@ -25,9 +30,9 @@ const Room = ({params}:RoomParams)=>{
     currentActions,
     noResponses
   } = useActivateResponseHandlers()
+  const {createGameAssets} = useInitGame()
 
-  useInitializePlayerSocket('test-user-1')
-  const {socket} = useGameStateContext() || {}
+  const {joinRoom, clearPlayers}= usePlayerSocket()
 
   useEffect(()=>{
     //preSocketRef.current makes sure we don't double add listeners
@@ -60,30 +65,63 @@ const Room = ({params}:RoomParams)=>{
       Room Number: {params.roomNumber}
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
-      <button onClick={()=>{
-        playerContext?.setPlayers(prev=>[
-          ...prev,
-          {username:`user ${prev.length}`}
-        ])
-      }}>
-        add player
-      </button>
-      <div>
-        <h1>TEST {JSON.stringify(currentActions)} no response:{noResponses}</h1>
-        <button onClick={()=>attemptActivate(actionTypes.shuffle)}>
+      <div className="border border-black">
+        <h1>
+          TEST Hook(To get this to work, you need to have 2 joined users with different usernames)
+          {JSON.stringify(currentActions)} no response:{noResponses}
+        </h1>
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.shuffle)}>
           shuffle
         </button>
         {showResponsePrompt && (
           <div>
-          <button onClick={()=>attemptActivate(actionTypes.nope)}>
+          <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
             send nope {JSON.stringify(allowedResponse)}
           </button>
-          <button onClick={()=>sendNoResponse()}>
+          <button className="btn btn-blue" onClick={()=>sendNoResponse()}>
             no response
           </button>
           </div>
         )}
       </div>
+
+      <div className="border border-black">
+        <h1>join room</h1>
+        <form onSubmit={(e:React.FormEvent)=>{
+          e.preventDefault()
+          joinRoom(username)
+          setUsername("")
+        }}>
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+            Username
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="username"
+            type="text"
+            placeholder="Username"
+            onChange={(e:React.ChangeEvent<HTMLInputElement>)=>setUsername(e.target.value)}
+            value={username}
+          />
+          <button type="submit" className="btn btn-blue">
+            join room
+          </button>
+        </form>
+        <button onClick={clearPlayers} className="btn btn-blue">
+            clear players
+        </button>
+      </div>
+
+      <div className="border border-black">
+        <Hand/>
+        <div className="h-[15rem] overflow-y-scroll">
+          {JSON.stringify(deck)}
+        </div>
+        <button onClick={createGameAssets} className="btn btn-blue">
+            create game assets
+        </button>
+      </div>
+
     </div>
   )
 }

@@ -6,7 +6,7 @@ export const useActions = ()=>{
   
   const nopeAction = () =>{
     console.log('activate nope')
-    if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length))
+    if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
   }
 
 type ActionImpl =  {
