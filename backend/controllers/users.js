@@ -12,8 +12,8 @@ const all = async (req,res)=>{
 
 const create = async (req,res)=>{
   try{
-    const { username, password, email } = req.body  
-    console.log(username, password) 
+    const { username, password, email } = req.body
+
     const existingUser = await User.findOne({username})
 
     if(existingUser) {
@@ -21,9 +21,7 @@ const create = async (req,res)=>{
     }
 
     const salt = await bcrypt.genSalt(12)
-    console.log('salt:', salt)
     const hash = await bcrypt.hash(password, salt)
-    console.log('hash:', hash)
 
     const newUser = new User({ username, email, password: hash })
     await newUser.save()
