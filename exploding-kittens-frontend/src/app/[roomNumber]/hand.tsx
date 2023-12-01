@@ -6,6 +6,7 @@ export const Hand = ()=>{
   console.log(currentCards)
   return (
   <div className="flex flex-wrap">
+    hand:
     {currentCards?.map(card=>(
       <div className="hand-card border border-black w-[10rem] break-words" key={card.id}>
         {JSON.stringify(card)}

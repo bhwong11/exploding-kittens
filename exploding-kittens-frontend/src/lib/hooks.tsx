@@ -5,6 +5,7 @@ import { useGameStateContext } from "@/context/gameState"
 import { useActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
 import { shuffleArray } from "@/lib/helpers"
+//show prompt hook
 
 export const usePlayerSocket=()=>{
   const {setSocket,socket:currentSocket} = useGameStateContext() || {}
@@ -109,6 +110,7 @@ export const useActivateResponseHandlers=()=>{
 
       setCurrentActions(prev=>[...prev,data.action])
       setNoResponses(0)
+      //useEffect on action hook that sets a context var that it's complete
 
       if(data.newAllowedUsers.includes(currentPlayerUsername || '')){
         setShowResponsePrompt(true)
@@ -240,7 +242,6 @@ export const useInitGame = () => {
       if((currPlayerIndx || currPlayerIndx===0) && currPlayerIndx!==-1){
         newPlayers[currPlayerIndx].cards = hand
       }
-
       socket?.emit('all-players',newPlayers)
     }
   }
