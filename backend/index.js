@@ -31,7 +31,9 @@ app.use(express.json())
 app.get('/', async (req, res) => {
   let collection = db.collection("posts");
   let results = await collection.find({})
-    .limit(50)
+    // .limit(50)
+    // not sure .limit() works on .find() 
+    // I was getting an error so it'll be commented out for now
     .toArray();
   res.send(results).status(200);
   // res.sendFile(__dirname + '/index.html');
