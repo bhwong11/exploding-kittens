@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState} from "react"
 import { io, Socket } from "socket.io-client"
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
-import { useActions } from "@/lib/actions"
+import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
 import { shuffleArray } from "@/lib/helpers"
 //show prompt hook
@@ -56,9 +56,8 @@ export const usePlayerSocket=()=>{
     clearPlayers
   }
 }
-
-
-export const useActivateResponseHandlers=()=>{
+type useActivateResponseHandlersProps = {initListeners:boolean}
+export const useActivateResponseHandlers=({initListeners}:useActivateResponseHandlersProps={initListeners:false})=>{
 
   const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
   const {players, currentPlayerUsername} = usePlayerContext() || {}
@@ -67,12 +66,13 @@ export const useActivateResponseHandlers=()=>{
   const [allowedResponse, setAllowedResponse] = useState<ResponseActions | null | "all">("all")
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
-  const actionsImpl = useActions()
+  const actionsImpl = useCardActions()
 
   //when all users respond with "no responses", perform all actions in currentActions stack
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
   useEffect(()=>{
     //if all players that can respond respond with no response, implement all actions in "chain"
+    if(!initListeners) return
     if(
       noResponses>=(allowedUsers?.length || 0) 
       && currentActions?.length
@@ -95,17 +95,17 @@ export const useActivateResponseHandlers=()=>{
     if(!currentActions?.length){
       setNoResponses(0)
     }
+    //shouldn't listen for global state data
   },[noResponses,currentActions?.length])
 
 
   useEffect(()=>{
-    console.log('ATTEMPT',socket,currentPlayerUsername)
-    if(!socket || !currentPlayerUsername) return
+    if(!socket?.id || !currentPlayerUsername || !initListeners) return
     //if action is allow, add action to current action "chain"
-    socket?.on('activate-attempt',(data)=>{  
+    socket?.on('activate-attempt',(data)=>{
       if(
         !setCurrentActions
-        || ((data.newAllowedResponse!==data.action) && data.allowedResponse!=="all")
+        || ((allowedResponse!==data.action) && allowedResponse!=="all")
       ) return
 
       setCurrentActions(prev=>[...prev,data.action])
@@ -130,7 +130,7 @@ export const useActivateResponseHandlers=()=>{
     return ()=>{
       socket?.disconnect();
     }
-  },[socket,currentPlayerUsername])
+  },[socket?.id,currentPlayerUsername])
 
 
   //sends emit for action to be added to current stack and allowed responses
@@ -144,7 +144,7 @@ export const useActivateResponseHandlers=()=>{
     )
     
     if(action === actionTypes.exploding){
-      newAllowedResponse = [actionTypes.diffuse]
+      newAllowedResponse = actionTypes.diffuse
       newAllowedUsers = currentPlayerUsername?[currentPlayerUsername]:[]
     }
     if(action === actionTypes.diffuse){
@@ -181,6 +181,7 @@ export const useActivateResponseHandlers=()=>{
 export const useInitGame = () => {
   const {setDeck,socket} = useGameStateContext() || {}
   const {players} = usePlayerContext() || {}
+  const {setPlayerHand} = useGameActions()
 
   const excludedCardTypes:CardType[] = [cardTypes.exploding.type,cardTypes.diffuse.type]
   const handSize = 5
@@ -196,16 +197,19 @@ export const useInitGame = () => {
     }
   },[socket])
 
+  let cardsCreatedCount = 0
+
   const createCardsFromTypes = (cardTypesInput:typeof cardTypes[keyof typeof cardTypes][])=>{
     const deck:Card[] = []
     for(let cardType of cardTypesInput){
         for(let i=0;i<cardType.count;i++){
           deck.push({
-            id:deck.length,
+            id:cardsCreatedCount,
             color:cardType.color,
             image:cardType.images[i],
             type:cardType.type,
           })
+          cardsCreatedCount++
         }
     }
     return deck
@@ -252,8 +256,10 @@ export const useInitGame = () => {
         ...explodingKittenCards,
         ...diffuseCards
       ].sort(() => Math.random() - 0.5)
-      socket?.emit('deck',randomizedDeck)
-      if(setDeck)setDeck(randomizedDeck)
+      socket?.emit('deck',[...randomizedDeck,{
+        ...explodingKittenCards[0],
+        id:1000
+      }])
   }
 
   const createGameAssets = ()=>{
@@ -269,5 +275,46 @@ export const useInitGame = () => {
   return {
     createCardsFromTypes,
     createGameAssets
+  }
+}
+
+export const useTurns = ()=>{
+  const {
+    turnCount,
+    setTurnCount,
+  } = useGameStateContext() || {}
+  const {currentPlayerUsername,players} = usePlayerContext() ||{}
+
+  const {attemptActivate,currentActions} = useActivateResponseHandlers()
+  const {drawCard} = useGameActions()
+  const [isTurnEnd,setIsTurnEnd] = useState<boolean>(false)
+
+  useEffect(()=>{
+    //move up turn count at end of action chain in case of exploding cat and diffuse
+    if(!currentActions?.length && isTurnEnd){
+      if(setTurnCount)setTurnCount(prev=>prev+1)
+    }
+  },[currentActions?.length])
+
+  useEffect(()=>{
+    setIsTurnEnd(false)
+  },[turnCount])
+
+
+  const endTurn = () =>{
+    setIsTurnEnd(true)
+    const newCard = drawCard(currentPlayerUsername ?? '')
+    if(newCard?.type === cardTypes.exploding.type){
+      attemptActivate(cardTypes.exploding.type)
+    }else{
+      if(setTurnCount)setTurnCount(prev=>prev+1)
+    }
+  }
+
+  const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
+
+  return {
+    endTurn,
+    turnPlayer
   }
 }

@@ -1,8 +1,8 @@
-import { actionTypes } from "@/data/index"
-import { cardTypes } from "@/data/index"
 export {}
 
 declare global{
+  type cardTypesConst = typeof import('../data/index').cardTypes
+  type actionTypesConst = typeof import('../data/index').actionTypes
   type User = {
     wins?: number
     rooms?: []
@@ -10,14 +10,14 @@ declare global{
     id?: number
     username?: string
   }
-  type CardType = typeof cardTypes[keyof typeof cardTypes]["type"]
+  type CardType = cardTypesConst[keyof cardTypesConst]["type"]
   type Card = {
     id:number
     color: string
     image: string
     type: CardType
   }
-  type Actions = typeof actionTypes[keyof typeof actionTypes]
+  type Actions = actionTypesConst[keyof actionTypesConst]
   type ResponseActions = Actions["nope"] | Actions["diffuse"]
   type Player = {
     username: string
