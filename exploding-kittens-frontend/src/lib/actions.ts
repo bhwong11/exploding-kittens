@@ -1,7 +1,8 @@
+import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes } from "@/data"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 export const useGameActions = ()=>{
   const { deck,socket} = useGameStateContext() || {}
@@ -42,32 +43,95 @@ export const useGameActions = ()=>{
   return actions
 }
 
-export const useCardActions = ()=>{
-  const { setCurrentActions,currentActions} = useGameStateContext() || {}
-  const diffuseActionRef = useRef<boolean>(false)
-
-  useEffect(()=>{
-    if(diffuseActionRef.current){
-      //set state action complete ++
-    }
-    //shouldn't listen for global state data
-  },[currentActions?.length])
+type useCardActionsProps = {initListeners:boolean}
+export const useCardActions = ({initListeners}:useCardActionsProps={initListeners:false})=>{
+  const { setCurrentActions,currentActions,setActionPrompt,socket,turnCount} = useGameStateContext() || {}
+  const {players,currentPlayerUsername} = usePlayerContext() || {}
+  const [actionsComplete,setActionsComplete]=useState<number>(0)
+  const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
   
   const nopeAction = () =>{
     console.log('activate nope')
     if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
+    setActionsComplete(prev=>prev+1)
   }
 
   const diffuseAction = () =>{
+    //only activate if turn player
     console.log('activate diffuse')
     if(setCurrentActions) setCurrentActions(
       prev=>prev.filter(prev=>prev!==cardTypes.exploding.type)
     )
-    diffuseActionRef.current = true
+    setActionsComplete(prev=>prev+1)
   }
 
-type ActionImpl =  {
-    [key in Actions]: Function
+  const submitResponseEvent = (
+    showToUser:string,
+    customOptions:ActionPromptData["options"]={},
+    complete:boolean=false
+  )=>{
+    socket?.emit('next-action-response',{
+      showToUser,
+      customOptions,
+      ...(customOptions?{customOptions}:{}),
+      complete
+    })
+  }
+
+  const favorAction = ()=>{
+    if(setActionPrompt) {
+      setActionPrompt([
+          {
+            show:true,
+            options:{
+              username:[...players?.map(p=>p.username)??[]]
+            },
+            submitCallBack:(formData:FormData)=>{
+              const playerSelected = formData?.get('username')?.toString()
+              const customCardsOption = {
+                card:players?.find(p=>p.username===playerSelected)?.cards?.map(c=>c.type) ?? []
+              }
+              submitResponseEvent(playerSelected || '',customCardsOption)
+            }
+          },
+          {
+            show:true,
+            options:{},
+            submitCallBack:(formData:FormData)=>{
+              const cardType = formData.get('card')
+
+              const currentPlayerIndex = players?.findIndex(p=>p.username==currentPlayerUsername) ?? 0
+              const turnPlayerIndex = players?.findIndex(p=>p.username==turnPlayer?.username) ?? 0
+
+              const newCard = players?.[currentPlayerIndex]
+                ?.cards
+                ?.find(c=>c.type===cardType)
+
+              const newCurrentPlayerHand = players?.[currentPlayerIndex]
+                ?.cards.filter(c=>c.id!==newCard?.id) ?? []
+
+              const newTurnPlayerHand = [
+                ...players?.[turnPlayerIndex]?.cards ?? []
+                ,...(newCard?[newCard]:[])
+              ]
+              
+              const playersCopy = [...players ?? []]
+              playersCopy[currentPlayerIndex].cards = newCurrentPlayerHand
+              playersCopy[turnPlayerIndex].cards = newTurnPlayerHand
+              console.log('COPY!!!',playersCopy)
+
+              socket?.emit('all-players',playersCopy)
+              setActionPrompt(null)
+              submitResponseEvent('',{},true)
+            }
+          }
+        ]
+      )
+    }
+  }
+
+  type ActionImpl =  {
+    [key in Actions]: any
   }
   const actions:ActionImpl  = {
     //make this objects with an impl method
@@ -75,17 +139,23 @@ type ActionImpl =  {
     [actionTypes.diffuse]:diffuseAction,
     [actionTypes.exploding]:()=>{
       console.log('exploding')
+      setActionsComplete(prev=>prev+1)
     },
-    [actionTypes.favor]:()=>null,
+    [actionTypes.favor]:favorAction,
     [actionTypes.multiple2]:()=>null,
     [actionTypes.multiple3]:()=>null,
     [actionTypes.nope]:nopeAction,
     [actionTypes.seeTheFuture]:()=>null,
     [actionTypes.shuffle]:()=>{
       console.log('shuffle')
+      setActionsComplete(prev=>prev+1)
     },
-    [actionTypes.skip]:()=>null
+    [actionTypes.skip]:()=>null,
   }
 
-  return actions
+  return {
+    actions,
+    actionsComplete,
+    setActionsComplete
+  }
 }

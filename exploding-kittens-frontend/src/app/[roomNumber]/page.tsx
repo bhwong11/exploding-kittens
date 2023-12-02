@@ -10,6 +10,7 @@ import {
 } from "@/lib/hooks"
 import { actionTypes } from "@/data"
 import { Hand } from "@/app/[roomNumber]/hand"
+import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
 
 
 type RoomParams = {
@@ -75,7 +76,7 @@ const Room = ({params}:RoomParams)=>{
           TEST Hook(To get this to work, you need to have 2 joined users with different usernames)
           {JSON.stringify(currentActions)} no response:{noResponses}
         </h1>
-        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.shuffle)}>
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
           shuffle
         </button>
         {showResponsePrompt && (
@@ -91,6 +92,7 @@ const Room = ({params}:RoomParams)=>{
           </button>
           </div>
         )}
+        <ActionPrompt/>
       </div>
 
       <div className="border border-black">

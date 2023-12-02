@@ -56,6 +56,7 @@ export const usePlayerSocket=()=>{
     clearPlayers
   }
 }
+
 type useActivateResponseHandlersProps = {initListeners:boolean}
 export const useActivateResponseHandlers=({initListeners}:useActivateResponseHandlersProps={initListeners:false})=>{
 
@@ -66,7 +67,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
   const [allowedResponse, setAllowedResponse] = useState<ResponseActions | null | "all">("all")
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
-  const actionsImpl = useCardActions()
+  const {actions,setActionsComplete,actionsComplete} = useCardActions({initListeners:true})
 
   //when all users respond with "no responses", perform all actions in currentActions stack
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
@@ -81,7 +82,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
       if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
 
       //implement action
-      actionsImpl[currentActions[currentActions.length-1]]()
+      actions[currentActions[currentActions.length-1]]()
 
       //reset allowed users, responses, and hide response prompt
       setShowResponsePrompt(false)
@@ -94,9 +95,10 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
     
     if(!currentActions?.length){
       setNoResponses(0)
+      setActionsComplete(0)
     }
     //shouldn't listen for global state data
-  },[noResponses,currentActions?.length])
+  },[noResponses,actionsComplete,allowedUsers?.length])
 
 
   useEffect(()=>{
@@ -105,7 +107,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
     socket?.on('activate-attempt',(data)=>{
       if(
         !setCurrentActions
-        || ((allowedResponse!==data.action) && allowedResponse!=="all")
+        || ((data.allowedResponse!==data.action) && data.allowedResponse!=="all")
       ) return
 
       setCurrentActions(prev=>[...prev,data.action])

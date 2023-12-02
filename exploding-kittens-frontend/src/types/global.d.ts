@@ -24,6 +24,13 @@ declare global{
     lose: boolean
     cards: Card[]
   }
+  type ActionPromptData = {
+    show: boolean
+    options:{
+      [key:string]:any[]
+    }
+    submitCallBack: Function
+  }
   //socket.io event types
   interface ServerToClientEvents {
     ['new-page-backend']: (arg:{message:string}) => void
