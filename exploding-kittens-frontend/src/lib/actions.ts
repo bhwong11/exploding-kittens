@@ -65,6 +65,8 @@ export const useCardActions = ()=>{
     console.log('diffuse')
   }
 
+  //this needs to be added on each submitCallBack to trigger the next event
+  //or complete the event chain
   const submitResponseEvent = (
     showToUser:string,
     customOptions:ActionPromptData["options"]={},

@@ -183,7 +183,6 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
 export const useInitGame = () => {
   const {setDeck,socket} = useGameStateContext() || {}
   const {players} = usePlayerContext() || {}
-  const {setPlayerHand} = useGameActions()
 
   const excludedCardTypes:CardType[] = [cardTypes.exploding.type,cardTypes.diffuse.type]
   const handSize = 5
