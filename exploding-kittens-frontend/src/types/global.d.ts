@@ -47,6 +47,11 @@ declare global{
     }) => void
     ['all-players']: (arg:Player[]) => void
     ['deck']: (arg:Card[]) => void
+    ['next-action-response']: (arg:{
+      showToUser:string
+      customOptions?:ActionPromptData["options"]
+      complete:boolean
+    }) => void
   }
   
   interface ClientToServerEvents {
@@ -63,5 +68,10 @@ declare global{
     ['no-response']: () => void
     ['clear-players']: () => void
     ['deck']: (arg:Card[]) => void
+    ['next-action-response']: (arg:{
+      showToUser:string
+      customOptions?:ActionPromptData["options"]
+      complete:boolean
+    }) => void
   }
 }

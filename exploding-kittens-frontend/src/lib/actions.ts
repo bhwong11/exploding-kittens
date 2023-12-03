@@ -43,8 +43,8 @@ export const useGameActions = ()=>{
   return actions
 }
 
-type useCardActionsProps = {initListeners:boolean}
-export const useCardActions = ({initListeners}:useCardActionsProps={initListeners:false})=>{
+
+export const useCardActions = ()=>{
   const { setCurrentActions,currentActions,setActionPrompt,socket,turnCount} = useGameStateContext() || {}
   const {players,currentPlayerUsername} = usePlayerContext() || {}
   const [actionsComplete,setActionsComplete]=useState<number>(0)
@@ -58,11 +58,11 @@ export const useCardActions = ({initListeners}:useCardActionsProps={initListener
 
   const diffuseAction = () =>{
     //only activate if turn player
-    console.log('activate diffuse')
     if(setCurrentActions) setCurrentActions(
       prev=>prev.filter(prev=>prev!==cardTypes.exploding.type)
     )
     setActionsComplete(prev=>prev+1)
+    console.log('diffuse')
   }
 
   const submitResponseEvent = (
@@ -72,7 +72,6 @@ export const useCardActions = ({initListeners}:useCardActionsProps={initListener
   )=>{
     socket?.emit('next-action-response',{
       showToUser,
-      customOptions,
       ...(customOptions?{customOptions}:{}),
       complete
     })
@@ -118,11 +117,11 @@ export const useCardActions = ({initListeners}:useCardActionsProps={initListener
               const playersCopy = [...players ?? []]
               playersCopy[currentPlayerIndex].cards = newCurrentPlayerHand
               playersCopy[turnPlayerIndex].cards = newTurnPlayerHand
-              console.log('COPY!!!',playersCopy)
 
               socket?.emit('all-players',playersCopy)
               setActionPrompt(null)
               submitResponseEvent('',{},true)
+              setActionsComplete(prev=>prev+1)
             }
           }
         ]

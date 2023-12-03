@@ -67,7 +67,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
   const [allowedResponse, setAllowedResponse] = useState<ResponseActions | null | "all">("all")
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
-  const {actions,setActionsComplete,actionsComplete} = useCardActions({initListeners:true})
+  const {actions,setActionsComplete,actionsComplete} = useCardActions()
 
   //when all users respond with "no responses", perform all actions in currentActions stack
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom

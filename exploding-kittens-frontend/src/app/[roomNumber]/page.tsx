@@ -77,7 +77,7 @@ const Room = ({params}:RoomParams)=>{
           {JSON.stringify(currentActions)} no response:{noResponses}
         </h1>
         <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
-          shuffle
+          favor
         </button>
         {showResponsePrompt && (
           <div>
