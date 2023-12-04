@@ -7,7 +7,7 @@ import { usePlayerContext} from "@/context/players"
 export const ActionPrompt = ()=>{
   const {actionPrompt,socket,setActionPrompt} = useGameStateContext() || {}
   const {turnPlayer} = useTurns()
-  const {currentPlayerUsername} = usePlayerContext() || {}
+  const {currentPlayer} = usePlayerContext() || {}
   const [responseCount,setResponseCount] = useState<number>(0)
   const [customOptions,setCustomOptions] = useState<ActionPromptData["options"]>({})
   const [showToUser, setShowToUser] = useState<string>('')
@@ -33,7 +33,7 @@ export const ActionPrompt = ()=>{
     })
   },[socket])
 
-  return currentActionPrompt && showToUser===currentPlayerUsername && (
+  return currentActionPrompt && showToUser===currentPlayer?.username && (
     <form onSubmit={(e)=>{
       e.preventDefault()
       const formData = new FormData(e.currentTarget)
