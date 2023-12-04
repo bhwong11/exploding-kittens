@@ -41,23 +41,6 @@ const Room = ({params}:RoomParams)=>{
   const {endTurn} = useTurns()
 
   useEffect(()=>{
-    //preSocketRef.current makes sure we don't double add listeners
-    //can make this a helper hook to reduce boilerplate
-    socket?.emit('new-page',{
-      message:'new page!!'
-    })
-
-    socket?.on('new-page-backend',(data:{
-      message:string
-    })=>{
-      console.log('new-page-backend!!',data)
-    })
-    return () => {
-      socket?.disconnect();
-    }
-  },[socket])
-
-  useEffect(()=>{
     //add to .env
     fetch('http://localhost:3000/users')
       .then((res)=>res.json())
@@ -105,7 +88,7 @@ const Room = ({params}:RoomParams)=>{
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
           e.preventDefault()
-          joinRoom(username)
+          joinRoom(username,params.roomNumber)
           setUsername("")
         }}>
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
