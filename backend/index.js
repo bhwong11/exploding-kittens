@@ -99,6 +99,11 @@ io.on('connection', (socket) => {
     console.log('no-response')
     io.sockets.emit('no-response')
   })
+
+  socket.on('next-action-response',(data)=>{
+    console.log('next-action-response',data)
+    io.sockets.emit('next-action-response',data)
+  })
 });
 
 server.listen(port, () => {

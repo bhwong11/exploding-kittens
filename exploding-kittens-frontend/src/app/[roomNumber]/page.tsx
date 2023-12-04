@@ -1,11 +1,16 @@
 "use client"
 import {useEffect, useState } from "react"
 import { usePlayerContext } from "@/context/players"
-import { usePlayerSocket } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
-import { useActivateResponseHandlers,useInitGame } from "@/lib/hooks"
+import {
+  useActivateResponseHandlers,
+  useInitGame,
+  useTurns,
+  usePlayerSocket 
+} from "@/lib/hooks"
 import { actionTypes } from "@/data"
 import { Hand } from "@/app/[roomNumber]/hand"
+import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
 
 
 type RoomParams = {
@@ -16,7 +21,7 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {socket,deck,} = useGameStateContext() || {}
+  const {socket,deck, turnCount} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -29,10 +34,11 @@ const Room = ({params}:RoomParams)=>{
     sendNoResponse,
     currentActions,
     noResponses
-  } = useActivateResponseHandlers()
+  } = useActivateResponseHandlers({initListeners:true})
   const {createGameAssets} = useInitGame()
 
   const {joinRoom, clearPlayers}= usePlayerSocket()
+  const {endTurn} = useTurns()
 
   useEffect(()=>{
     //preSocketRef.current makes sure we don't double add listeners
@@ -70,19 +76,23 @@ const Room = ({params}:RoomParams)=>{
           TEST Hook(To get this to work, you need to have 2 joined users with different usernames)
           {JSON.stringify(currentActions)} no response:{noResponses}
         </h1>
-        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.shuffle)}>
-          shuffle
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
+          favor
         </button>
         {showResponsePrompt && (
           <div>
           <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
             send nope {JSON.stringify(allowedResponse)}
           </button>
+          <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.diffuse)}>
+            send diffuse {JSON.stringify(allowedResponse)}
+          </button>
           <button className="btn btn-blue" onClick={()=>sendNoResponse()}>
             no response
           </button>
           </div>
         )}
+        <ActionPrompt/>
       </div>
 
       <div className="border border-black">
@@ -122,7 +132,12 @@ const Room = ({params}:RoomParams)=>{
             create game assets(need at least one joined user for this to work)
         </button>
       </div>
-
+      <div className="border border-black">
+        <h1>{turnCount}</h1>
+        <button className="btn btn-blue" onClick={()=>endTurn()}>
+          end turn
+        </button>
+      </div>
     </div>
   )
 }
