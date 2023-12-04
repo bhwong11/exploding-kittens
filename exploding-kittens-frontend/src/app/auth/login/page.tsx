@@ -6,10 +6,9 @@ const Login = () => {
   const [password, setPassword] = useState('')
 
   const handleLogin = async () => {
-    // console.log('Username:', username)
-    // console.log('Password:', password)
+
     try {
-      const response = await fetch('localhost/3000/login', {
+      await fetch('http://localhost:3000/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -18,14 +17,12 @@ const Login = () => {
           username,
           password,
         }),
-      });
-      if (response.ok) {
-        // Handle successful login
-        console.log('Login successful');
-      } else {
-        // Handle login error
-        console.error('Login failed');
-      }
+      })
+      .then(res => res.json())
+      .then((data: User) => {
+        console.log("data:",data)
+      })
+
     } catch (error) {
       console.error('Error during login:', error);
     }

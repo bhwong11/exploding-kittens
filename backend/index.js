@@ -1,7 +1,5 @@
 import express from 'express';
 import http from 'http';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import db from './db/db.connection.js';
@@ -11,9 +9,6 @@ import { generateRoutes } from './helpers/index.js';
 import cors from 'cors'
 
 dotenv.config();
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
