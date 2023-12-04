@@ -282,7 +282,9 @@ export const useInitGame = () => {
 export const useTurns = ()=>{
   const {
     turnCount,
+    attackTurns,
     setTurnCount,
+    setAttackTurns
   } = useGameStateContext() || {}
   const {currentPlayer,players} = usePlayerContext() ||{}
 
@@ -293,13 +295,17 @@ export const useTurns = ()=>{
   useEffect(()=>{
     //move up turn count at end of action chain in case of exploding cat and diffuse
     if(!currentActions?.length && isTurnEnd){
-      if(setTurnCount)setTurnCount(prev=>prev+1)
+      if(attackTurns??0>0){
+        if(setAttackTurns)setAttackTurns(prev=>prev-1)
+      }else{
+        if(setTurnCount)setTurnCount(prev=>prev+1)
+      }
     }
   },[currentActions?.length])
 
   useEffect(()=>{
     setIsTurnEnd(false)
-  },[turnCount])
+  },[turnCount,attackTurns])
 
 
   const endTurn = () =>{
@@ -308,7 +314,11 @@ export const useTurns = ()=>{
     if(newCard?.type === cardTypes.exploding.type){
       attemptActivate(cardTypes.exploding.type)
     }else{
-      if(setTurnCount)setTurnCount(prev=>prev+1)
+      if(attackTurns??0>0){
+        if(setAttackTurns)setAttackTurns(prev=>prev-1)
+      }else{
+        if(setTurnCount)setTurnCount(prev=>prev+1)
+      }
     }
   }
 

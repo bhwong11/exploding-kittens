@@ -21,7 +21,7 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {socket,deck, turnCount} = useGameStateContext() || {}
+  const {socket,deck, turnCount, attackTurns} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -79,6 +79,12 @@ const Room = ({params}:RoomParams)=>{
         <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
           favor
         </button>
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.seeTheFuture)}>
+          send see the future
+        </button>
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.attack)}>
+          attack
+        </button>
         {showResponsePrompt && (
           <div>
           <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
@@ -133,7 +139,7 @@ const Room = ({params}:RoomParams)=>{
         </button>
       </div>
       <div className="border border-black">
-        <h1>{turnCount}</h1>
+        <h1>turn count: {turnCount}, attack turns: {attackTurns}</h1>
         <button className="btn btn-blue" onClick={()=>endTurn()}>
           end turn
         </button>

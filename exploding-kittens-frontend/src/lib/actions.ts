@@ -45,7 +45,14 @@ export const useGameActions = ()=>{
 
 
 export const useCardActions = ()=>{
-  const { setCurrentActions,currentActions,setActionPrompt,socket,turnCount} = useGameStateContext() || {}
+  const { 
+    deck,
+    socket,
+    turnCount,
+    setCurrentActions,
+    setActionPrompt,
+    setAttackTurns,
+    setTurnCount} = useGameStateContext() || {}
   const {players,currentPlayer} = usePlayerContext() || {}
   const [actionsComplete,setActionsComplete]=useState<number>(0)
   const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
@@ -85,12 +92,18 @@ export const useCardActions = ()=>{
           {
             show:true,
             options:{
-              username:[...players?.map(p=>p.username)??[]]
+              username:[...players?.map(p=>({
+                value:p.username,
+                display:p.username
+              }))??[]]
             },
             submitCallBack:(formData:FormData)=>{
               const playerSelected = formData?.get('username')?.toString()
               const customCardsOption = {
-                card:players?.find(p=>p.username===playerSelected)?.cards?.map(c=>c.type) ?? []
+                card:players?.find(p=>p.username===playerSelected)?.cards?.map(c=>({
+                  value:c.type,
+                  display:`${c.type} - ${c.id}`
+                })) ?? []
               }
               submitResponseEvent(playerSelected || '',customCardsOption)
             }
@@ -131,12 +144,39 @@ export const useCardActions = ()=>{
     }
   }
 
+  const seeTheFutureAction = ()=>{
+    console.log('shuffle action')
+    if(setActionPrompt) {
+      setActionPrompt([
+          {
+            show:true,
+            text:`${deck?.slice(deck.length-3).map(
+              c=>`${c.type} - ${c.id}`
+            ).join()}`,
+            options:{},
+            submitCallBack:()=>{
+              setActionPrompt(null)
+              submitResponseEvent('',{},true)
+              setActionsComplete(prev=>prev+1)
+            }
+          },
+        ]
+      )
+    }
+  }
+
+  const attackAction = ()=>{
+    console.log('attack action')
+    if(setAttackTurns)setAttackTurns(prev=>prev+1)
+    if(setTurnCount)(setTurnCount(prev=>prev+1))
+  }
+
   type ActionImpl =  {
     [key in Actions]: any
   }
   const actions:ActionImpl  = {
     //make this objects with an impl method
-    [actionTypes.attack]:()=>null,
+    [actionTypes.attack]:attackAction,
     [actionTypes.diffuse]:diffuseAction,
     [actionTypes.exploding]:()=>{
       console.log('exploding')
@@ -146,7 +186,7 @@ export const useCardActions = ()=>{
     [actionTypes.multiple2]:()=>null,
     [actionTypes.multiple3]:()=>null,
     [actionTypes.nope]:nopeAction,
-    [actionTypes.seeTheFuture]:()=>null,
+    [actionTypes.seeTheFuture]:seeTheFutureAction,
     [actionTypes.shuffle]:()=>{
       console.log('shuffle')
       setActionsComplete(prev=>prev+1)

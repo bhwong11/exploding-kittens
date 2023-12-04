@@ -8,8 +8,10 @@ type GameStateContextValues ={
   turnCount: number,
   currentActions:Actions[],
   actionPrompt: ActionPromptData[] | null,
+  attackTurns: number,
   socket:Socket<ServerToClientEvents, ClientToServerEvents> | null,
   setSocket: React.Dispatch<React.SetStateAction<Socket<ServerToClientEvents, ClientToServerEvents> | null>>,
+  setAttackTurns: React.Dispatch<React.SetStateAction<number>>
   setActionPrompt: React.Dispatch<React.SetStateAction<ActionPromptData[] | null>>
   setDeck: React.Dispatch<React.SetStateAction<Card[]>>
   setDiscardPile: React.Dispatch<React.SetStateAction<Card[]>>
@@ -27,6 +29,7 @@ export const GameStateContextProvider = ({children}:{
   const [turnCount, setTurnCount]= useState<number>(0)
   const [currentActions, setCurrentActions]= useState<Actions[]>([])
   const [actionPrompt, setActionPrompt]= useState<ActionPromptData[] | null>(null)
+  const [attackTurns, setAttackTurns]= useState<number>(0)
   const [socket, setSocket]= useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null)
 
   return (
@@ -38,6 +41,8 @@ export const GameStateContextProvider = ({children}:{
         currentActions,
         socket,
         actionPrompt,
+        attackTurns,
+        setAttackTurns,
         setActionPrompt,
         setSocket,
         setDeck,

@@ -26,8 +26,9 @@ declare global{
   }
   type ActionPromptData = {
     show: boolean
+    text?:string
     options:{
-      [key:string]:any[]
+      [key:string]:{value:string,display:string}[]
     }
     submitCallBack: Function
   }
