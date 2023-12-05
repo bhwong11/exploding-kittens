@@ -9,7 +9,7 @@ import {
   usePlayerSocket 
 } from "@/lib/hooks"
 import { actionTypes } from "@/data"
-import { Hand } from "@/app/[roomNumber]/hand"
+import { Hand } from "@/app/[roomNumber]/Hand"
 import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
 
 
@@ -21,7 +21,7 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {socket,deck, turnCount, attackTurns} = useGameStateContext() || {}
+  const {socket,deck, turnCount, attackTurns,discardPile} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -116,6 +116,8 @@ const Room = ({params}:RoomParams)=>{
         <div className="h-[15rem] overflow-y-scroll">
           Deck:
           {JSON.stringify(deck)}
+          Discard:
+          {JSON.stringify(discardPile)}
         </div>
         <button onClick={createGameAssets} className="btn btn-blue">
             create game assets(need at least one joined user for this to work)

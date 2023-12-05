@@ -1,8 +1,8 @@
-import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes } from "@/data"
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import { addCardsToHand, removeCardsFromHand } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
   const { deck,socket} = useGameStateContext() || {}
@@ -115,25 +115,14 @@ export const useCardActions = ()=>{
               const cardType = formData.get('card')
 
               const currentPlayerIndex = players?.findIndex(p=>p.username==currentPlayer?.username) ?? 0
-              const turnPlayerIndex = players?.findIndex(p=>p.username==turnPlayer?.username) ?? 0
 
               const newCard = players?.[currentPlayerIndex]
                 ?.cards
                 ?.find(c=>c.type===cardType)
-
-              const newCurrentPlayerHand = players?.[currentPlayerIndex]
-                ?.cards.filter(c=>c.id!==newCard?.id) ?? []
-
-              const newTurnPlayerHand = [
-                ...players?.[turnPlayerIndex]?.cards ?? []
-                ,...(newCard?[newCard]:[])
-              ]
               
-              const playersCopy = [...players ?? []]
-              playersCopy[currentPlayerIndex].cards = newCurrentPlayerHand
-              playersCopy[turnPlayerIndex].cards = newTurnPlayerHand
+              removeCardsFromHand(socket,[...(newCard?[newCard]:[])],currentPlayer?.username,players)
+              addCardsToHand(socket,[...(newCard?[newCard]:[])],turnPlayer?.username,players)
 
-              socket?.emit('all-players',playersCopy)
               setActionPrompt(null)
               submitResponseEvent('',{},true)
               setActionsComplete(prev=>prev+1)
