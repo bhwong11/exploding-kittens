@@ -1,7 +1,9 @@
 'use client'
 import { useState } from 'react'
+import { usePlayerContext } from '@/context/players'
 
 const Login = () => {
+  const { setCurrentPlayer, currentPlayer } = usePlayerContext() || {}
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
@@ -20,14 +22,13 @@ const Login = () => {
       })
       .then(res => res.json())
       .then((data: User) => {
-        console.log("data:",data)
+        if (setCurrentPlayer) setCurrentPlayer(data)
       })
-
+    
     } catch (error) {
       console.error('Error during login:', error);
     }
   }
-
   return (
     <div>
       <h2>Login</h2>

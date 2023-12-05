@@ -12,8 +12,8 @@ const login = async (req, res) => {
     } 
 
     if (bcrypt.compare(existingUser.password, password)) {
-      console.log(username, password)
-      res.json({existingUser}).status(200)
+      const { username, rooms, wins, id, _id } = existingUser
+      return res.json({username, rooms, wins, id, _id}).status(200)
     }
 
   } catch (e) {
