@@ -39,10 +39,11 @@ export const ActionPrompt = ()=>{
       const formData = new FormData(e.currentTarget)
       currentActionPrompt?.submitCallBack(formData)
     }}>
+      <p className="action-prompt-text">{currentActionPrompt?.text}</p>
       {Object.entries(currentActionPrompt?.options ?? {}).map(([name,options])=>(
         <select key={`select-${name}`} name={name}>
           {options?.map(option=>(
-            <option key={`option-${option}`} value={option}>{option}</option>
+            <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
           ))}
         </select>
       ))}
@@ -50,12 +51,12 @@ export const ActionPrompt = ()=>{
       {Object.entries(customOptions ?? {}).map(([name,options])=>(
         <select key={`select-${name}`} name={name}>
           {options?.map(option=>(
-            <option key={`option-${option}`} value={option}>{option}</option>
+            <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
           ))}
         </select>
       ))}
 
-      <button type="submit" className="btn btn-blue">Submit Action Response</button>
+      <button type="submit" className="btn btn-blue">Submit/Confirm</button>
     </form>
   )
 

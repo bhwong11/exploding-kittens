@@ -21,7 +21,7 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {socket,deck, turnCount} = useGameStateContext() || {}
+  const {socket,deck, turnCount, attackTurns} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -39,23 +39,6 @@ const Room = ({params}:RoomParams)=>{
 
   const {joinRoom, clearPlayers}= usePlayerSocket()
   const {endTurn} = useTurns()
-
-  useEffect(()=>{
-    //preSocketRef.current makes sure we don't double add listeners
-    //can make this a helper hook to reduce boilerplate
-    socket?.emit('new-page',{
-      message:'new page!!'
-    })
-
-    socket?.on('new-page-backend',(data:{
-      message:string
-    })=>{
-      console.log('new-page-backend!!',data)
-    })
-    return () => {
-      socket?.disconnect();
-    }
-  },[socket])
 
   useEffect(()=>{
     //add to .env
@@ -79,6 +62,12 @@ const Room = ({params}:RoomParams)=>{
         <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
           favor
         </button>
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.seeTheFuture)}>
+          send see the future
+        </button>
+        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.attack)}>
+          attack
+        </button>
         {showResponsePrompt && (
           <div>
           <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
@@ -99,7 +88,7 @@ const Room = ({params}:RoomParams)=>{
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
           e.preventDefault()
-          joinRoom(username)
+          joinRoom(username,params.roomNumber)
           setUsername("")
         }}>
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
@@ -133,7 +122,7 @@ const Room = ({params}:RoomParams)=>{
         </button>
       </div>
       <div className="border border-black">
-        <h1>{turnCount}</h1>
+        <h1>turn count: {turnCount}, attack turns: {attackTurns}</h1>
         <button className="btn btn-blue" onClick={()=>endTurn()}>
           end turn
         </button>
