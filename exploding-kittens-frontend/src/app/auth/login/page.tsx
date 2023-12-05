@@ -5,9 +5,27 @@ const Login = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleLogin = () => {
-    console.log('Username:', username)
-    console.log('Password:', password)
+  const handleLogin = async () => {
+
+    try {
+      await fetch('http://localhost:3000/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      })
+      .then(res => res.json())
+      .then((data: User) => {
+        console.log("data:",data)
+      })
+
+    } catch (error) {
+      console.error('Error during login:', error);
+    }
   }
 
   return (
@@ -17,6 +35,7 @@ const Login = () => {
         <label>
           Username:
           <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             type='text'
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -25,12 +44,17 @@ const Login = () => {
         <label>
           Password:
           <input  
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             type='password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>
-        <button type='button' onClick={handleLogin}>
+        <button 
+          className="btn btn-blue"
+          type='button' 
+          onClick={handleLogin}
+        >
           Login
         </button>
       </form>

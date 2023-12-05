@@ -1,8 +1,8 @@
 import { usePlayerContext } from "@/context/players"
 
 export const Hand = ()=>{
-  const {players,currentPlayerUsername} =  usePlayerContext() || {}
-  const currentCards = players?.find(p=>p.username===currentPlayerUsername)?.cards
+  const {players,currentPlayer} =  usePlayerContext() || {}
+  const currentCards = players?.find(p=>p.username===currentPlayer?.username)?.cards
   return (
   <div className="flex flex-wrap">
     hand:

@@ -9,7 +9,7 @@ import { shuffleArray } from "@/lib/helpers"
 
 export const usePlayerSocket=()=>{
   const {setSocket,socket:currentSocket} = useGameStateContext() || {}
-  const {setPlayers,players,setCurrentPlayerUsername} = usePlayerContext() || {}
+  const {setPlayers,players,setCurrentPlayer} = usePlayerContext() || {}
 
   let socket:Socket<ServerToClientEvents, ClientToServerEvents> | null  = null
 
@@ -44,7 +44,7 @@ export const usePlayerSocket=()=>{
         username,
         ...(room?{room}:{})
       })
-      if(setCurrentPlayerUsername) setCurrentPlayerUsername(username)
+      if(setCurrentPlayer) setCurrentPlayer({username})
     }else{
       console.error('socket not initialized yet')
     }
@@ -61,7 +61,7 @@ type useActivateResponseHandlersProps = {initListeners:boolean}
 export const useActivateResponseHandlers=({initListeners}:useActivateResponseHandlersProps={initListeners:false})=>{
 
   const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
-  const {players, currentPlayerUsername} = usePlayerContext() || {}
+  const {players, currentPlayer} = usePlayerContext() || {}
   const [showResponsePrompt, setShowResponsePrompt] = useState<boolean>(false)
   const [noResponses, setNoResponses] = useState<number>(0)
   const [allowedResponse, setAllowedResponse] = useState<ResponseActions | null | "all">("all")
@@ -89,7 +89,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
       setAllowedResponse("all")
       setAllowedUsers(
         players?.map(p=>p.username)
-        .filter(username=>username===currentPlayerUsername) || []
+        .filter(username=>username===currentPlayer?.username) || []
       )
     }
     
@@ -102,7 +102,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
 
 
   useEffect(()=>{
-    if(!socket?.id || !currentPlayerUsername || !initListeners) return
+    if(!socket?.id || !currentPlayer || !initListeners) return
     //if action is allow, add action to current action "chain"
     socket?.on('activate-attempt',(data)=>{
       if(
@@ -114,7 +114,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
       setNoResponses(0)
       //useEffect on action hook that sets a context var that it's complete
 
-      if(data.newAllowedUsers.includes(currentPlayerUsername || '')){
+      if(data.newAllowedUsers.includes(currentPlayer.username || '')){
         setShowResponsePrompt(true)
       }else(
         setShowResponsePrompt(false)
@@ -132,7 +132,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
     return ()=>{
       socket?.disconnect();
     }
-  },[socket?.id,currentPlayerUsername])
+  },[socket?.id,currentPlayer?.username])
 
 
   //sends emit for action to be added to current stack and allowed responses
@@ -142,12 +142,12 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
     let newAllowedUsers: string[] = (
       players
       ?.map(p=>p.username)
-      .filter(username=>username!==currentPlayerUsername) || []
+      .filter(username=>username!==currentPlayer?.username) || []
     )
     
     if(action === actionTypes.exploding){
       newAllowedResponse = actionTypes.diffuse
-      newAllowedUsers = currentPlayerUsername?[currentPlayerUsername]:[]
+      newAllowedUsers = currentPlayer?.username?[currentPlayer.username]:[]
     }
     if(action === actionTypes.diffuse){
       newAllowedResponse = null
@@ -284,7 +284,7 @@ export const useTurns = ()=>{
     turnCount,
     setTurnCount,
   } = useGameStateContext() || {}
-  const {currentPlayerUsername,players} = usePlayerContext() ||{}
+  const {currentPlayer,players} = usePlayerContext() ||{}
 
   const {attemptActivate,currentActions} = useActivateResponseHandlers()
   const {drawCard} = useGameActions()
@@ -304,7 +304,7 @@ export const useTurns = ()=>{
 
   const endTurn = () =>{
     setIsTurnEnd(true)
-    const newCard = drawCard(currentPlayerUsername ?? '')
+    const newCard = drawCard(currentPlayer?.username ?? '')
     if(newCard?.type === cardTypes.exploding.type){
       attemptActivate(cardTypes.exploding.type)
     }else{

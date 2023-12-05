@@ -46,7 +46,7 @@ export const useGameActions = ()=>{
 
 export const useCardActions = ()=>{
   const { setCurrentActions,currentActions,setActionPrompt,socket,turnCount} = useGameStateContext() || {}
-  const {players,currentPlayerUsername} = usePlayerContext() || {}
+  const {players,currentPlayer} = usePlayerContext() || {}
   const [actionsComplete,setActionsComplete]=useState<number>(0)
   const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
   
@@ -101,7 +101,7 @@ export const useCardActions = ()=>{
             submitCallBack:(formData:FormData)=>{
               const cardType = formData.get('card')
 
-              const currentPlayerIndex = players?.findIndex(p=>p.username==currentPlayerUsername) ?? 0
+              const currentPlayerIndex = players?.findIndex(p=>p.username==currentPlayer?.username) ?? 0
               const turnPlayerIndex = players?.findIndex(p=>p.username==turnPlayer?.username) ?? 0
 
               const newCard = players?.[currentPlayerIndex]
