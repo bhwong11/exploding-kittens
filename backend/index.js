@@ -40,14 +40,10 @@ db.once('connected', () => {
   console.log('DB connected')
 })
 
-let players = []
-let deck = []
-
 let rooms = {}
 
 io.on('connection', (socket) => {
   console.log('a player connected',socket.id);
-  socket.emit('all-players',players)
   socket.on('disconnecting', () => {
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
@@ -113,25 +109,22 @@ io.on('connection', (socket) => {
     if(rooms[playerRoom]){
       rooms[playerRoom].players = []
     }
-    emitToPlayerRoom(io,socket,'all-players', players)
+    emitToPlayerRoom(io,socket,'all-players', rooms[playerRoom].players)
   })
 
   socket.on('activate-attempt',(data)=>{
     console.log('activate-attempt',data)
     emitToPlayerRoom(io,socket,'activate-attempt', data)
-    // io.sockets.emit('activate-attempt',data)
   })
 
   socket.on('no-response',()=>{
     console.log('no-response')
     emitToPlayerRoom(io,socket,'no-response')
-    // io.sockets.emit('no-response')
   })
 
   socket.on('next-action-response',(data)=>{
     console.log('next-action-response',data)
     emitToPlayerRoom(io,socket,'next-action-response', data)
-    // io.sockets.emit('next-action-response',data)
   })
 });
 
