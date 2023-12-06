@@ -13,6 +13,12 @@ export const Hand = ()=>{
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
   const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
 
+  const disableActions = (
+    !selectedCards.length || 
+    !multiCardActions[selectedCards.length] 
+    || (new Set(selectedCards.map(c=>c.type)).size === 1)
+  )
+
   const cardActivateHandler = ()=>{
     if(!socket) return
     const multiCardAction = multiCardActions[selectedCards.length]
@@ -24,7 +30,7 @@ export const Hand = ()=>{
       }
       return
     }
-    const cardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0].type)
+    const cardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
 
     if(selectedCards.length<=1 && cardActionType){
       attemptActivate(cardActionType)
@@ -58,7 +64,7 @@ export const Hand = ()=>{
         </div>
       ))}
     </div>
-    <button className="btn btn-blue" onClick={cardActivateHandler}>
+    <button className="btn btn-blue" onClick={cardActivateHandler} disabled={disableActions}>
       activate cards
     </button>
   </div>
