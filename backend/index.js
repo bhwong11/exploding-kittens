@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
     }
     console.log('a player disconnected',socket.id,rooms[playerRoom]);
     if(rooms[playerRoom]){
-      io.sockets.emit('all-players',rooms[playerRoom] ?? [])
+      io.sockets.emit('all-players',rooms[playerRoom].players ?? [])
     }
   });
 
