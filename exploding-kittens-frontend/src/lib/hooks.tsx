@@ -38,7 +38,6 @@ export const usePlayerSocket=()=>{
   }
 
   const joinRoom = (username:string, room?:string):void =>{
-    if(isPlayerInRoom(username)) return
     if(currentSocket){
       currentSocket.emit('new-player',{
         username,
@@ -181,7 +180,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
 }
 
 export const useInitGame = () => {
-  const {setDeck,socket} = useGameStateContext() || {}
+  const {setDeck,socket,setDiscardPile} = useGameStateContext() || {}
   const {players} = usePlayerContext() || {}
 
   const excludedCardTypes:CardType[] = [cardTypes.exploding.type,cardTypes.diffuse.type]
@@ -189,8 +188,12 @@ export const useInitGame = () => {
 
   useEffect(()=>{
     if(!socket) return
-    socket?.on('deck',(data)=>{
+    socket.on('deck',(data)=>{
       if(setDeck)setDeck(data)
+    })
+
+    socket.on('discard-pile',(data)=>{
+      if(setDiscardPile)setDiscardPile(data)
     })
 
     return ()=>{

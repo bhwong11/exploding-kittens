@@ -48,6 +48,8 @@ declare global{
     }) => void
     ['all-players']: (arg:Player[]) => void
     ['deck']: (arg:Card[]) => void
+    ['error']: (arg:{message:string}) => void
+    ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
       showToUser:string
       customOptions?:ActionPromptData["options"]
@@ -69,6 +71,8 @@ declare global{
     ['no-response']: () => void
     ['clear-players']: () => void
     ['deck']: (arg:Card[]) => void
+    ['error']: (arg:string) => void
+    ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
       showToUser:string
       customOptions?:ActionPromptData["options"]

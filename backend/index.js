@@ -41,13 +41,14 @@ db.once('connected', () => {
 })
 
 let rooms = {}
+const roomMax = 4
 
 io.on('connection', (socket) => {
   console.log('a player connected',socket.id);
   socket.on('disconnecting', () => {
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
-      rooms[playerRoom] = rooms[playerRoom]?.players?.filter(player=>player.socketId!==socket.id)
+      rooms[playerRoom].players = rooms[playerRoom]?.players?.filter(player=>player.socketId!==socket.id)
     }
     console.log('a player disconnected',socket.id,rooms[playerRoom]);
     if(rooms[playerRoom]){
@@ -56,6 +57,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('new-player',(data)=>{
+    console.log('new-player',data,rooms)
     if(!data.room || !data.username){
       socket.emit('error',{
         message:'username or room was not included'
@@ -68,20 +70,35 @@ io.on('connection', (socket) => {
     if(!rooms[data.room]){
       rooms[data.room] = {
         players:[],
-        deck:[]
+        deck:[],
+        discardPile:[]
       }
     }
 
     const existingPlayerIndex = rooms[data.room]?.players?.findIndex(player=>player.username===data?.username)
 
-    if(existingPlayerIndex===-1){
-      rooms[data.room]?.players.push({
-        ...data,
-        socketId: socket.id,
-        lose:false,
-        cards:[]
+    if(existingPlayerIndex!==-1 && typeof existingPlayerIndex === 'number'){
+      socket.emit('error',{
+        message:'player already exist'
       })
+      console.log('player already exist in room')
+      return
     }
+
+    if((rooms[data.room]?.players?.length>=roomMax)){
+      socket.emit('error',{
+        message:'room is already full'
+      })
+      console.log('room is already full')
+      return
+    }
+
+    rooms[data.room]?.players.push({
+      ...data,
+      socketId: socket.id,
+      lose:false,
+      cards:[]
+    })
     emitToPlayerRoom(io,socket,'all-players',rooms[data.room]?.players ?? [])
   })
 
@@ -92,6 +109,15 @@ io.on('connection', (socket) => {
       rooms[playerRoom].deck = data
     }
     emitToPlayerRoom(io,socket,'deck',rooms[playerRoom]?.deck ?? [])
+  })
+
+  socket.on('discard-pile',(data)=>{
+    console.log('discard-pile',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].discardPile = data
+    }
+    emitToPlayerRoom(io,socket,'discard-pile',rooms[playerRoom]?.discardPile ?? [])
   })
 
   socket.on('all-players',(data)=>{
@@ -115,6 +141,13 @@ io.on('connection', (socket) => {
   socket.on('activate-attempt',(data)=>{
     console.log('activate-attempt',data)
     emitToPlayerRoom(io,socket,'activate-attempt', data)
+  })
+
+  socket.on('error',(data)=>{
+    console.log('error',data)
+    socket.emit('error',{
+      message:data
+    })
   })
 
   socket.on('no-response',()=>{
