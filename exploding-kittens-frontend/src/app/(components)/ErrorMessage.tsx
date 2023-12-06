@@ -14,7 +14,6 @@ export const ErrorMessage = ({
   useEffect(()=>{
     if(!socket) return
     socket.on('error',(data)=>{
-      console.log('ERROR!!')
       setErrorMessage(data.message)
       if(!message){
         setShowError(true)
