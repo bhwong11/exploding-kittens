@@ -14,9 +14,9 @@ export const Hand = ()=>{
   const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
 
   const disableActions = (
-    !selectedCards.length || 
-    !multiCardActions[selectedCards.length] 
-    || (new Set(selectedCards.map(c=>c.type)).size === 1)
+    !selectedCards.length
+    || (!multiCardActions[selectedCards.length] && selectedCards.length>1)
+    || !(new Set(selectedCards.map(c=>c.type)).size === 1)
   )
 
   const cardActivateHandler = ()=>{
