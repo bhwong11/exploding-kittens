@@ -11,6 +11,7 @@ import {
 import { actionTypes } from "@/data"
 import { Hand } from "@/app/[roomNumber]/Hand"
 import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
+import { ErrorMessage } from "@/app/(components)/ErrorMessage"
 
 
 type RoomParams = {
@@ -21,7 +22,7 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {socket,deck, turnCount, attackTurns,discardPile} = useGameStateContext() || {}
+  const {deck, turnCount, attackTurns,discardPile} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -54,6 +55,7 @@ const Room = ({params}:RoomParams)=>{
       Room Number: {params.roomNumber}
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
+      <ErrorMessage/>
       <div className="border border-black">
         <h1>
           TEST Hook(To get this to work, you need to have 2 joined users with different usernames)

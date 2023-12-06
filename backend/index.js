@@ -48,7 +48,7 @@ io.on('connection', (socket) => {
   socket.on('disconnecting', () => {
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
-      rooms[playerRoom] = rooms[playerRoom]?.players?.filter(player=>player.socketId!==socket.id)
+      rooms[playerRoom].players = rooms[playerRoom]?.players?.filter(player=>player.socketId!==socket.id)
     }
     console.log('a player disconnected',socket.id,rooms[playerRoom]);
     if(rooms[playerRoom]){
@@ -57,6 +57,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('new-player',(data)=>{
+    console.log('new-player',data,rooms)
     if(!data.room || !data.username){
       socket.emit('error',{
         message:'username or room was not included'
@@ -76,10 +77,11 @@ io.on('connection', (socket) => {
 
     const existingPlayerIndex = rooms[data.room]?.players?.findIndex(player=>player.username===data?.username)
 
-    if(existingPlayerIndex!==-1){
+    if(existingPlayerIndex!==-1 && typeof existingPlayerIndex === 'number'){
       socket.emit('error',{
         message:'player already exist'
       })
+      console.log('player already exist in room')
       return
     }
 
@@ -87,6 +89,7 @@ io.on('connection', (socket) => {
       socket.emit('error',{
         message:'room is already full'
       })
+      console.log('room is already full')
       return
     }
 

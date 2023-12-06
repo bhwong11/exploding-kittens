@@ -38,7 +38,6 @@ export const usePlayerSocket=()=>{
   }
 
   const joinRoom = (username:string, room?:string):void =>{
-    if(isPlayerInRoom(username)) return
     if(currentSocket){
       currentSocket.emit('new-player',{
         username,
