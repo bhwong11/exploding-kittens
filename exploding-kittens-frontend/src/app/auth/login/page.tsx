@@ -1,7 +1,11 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { usePlayerContext } from '@/context/players'
 
 const Login = () => {
+  const router = useRouter()
+  const { setCurrentPlayer } = usePlayerContext() || {}
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
@@ -20,14 +24,15 @@ const Login = () => {
       })
       .then(res => res.json())
       .then((data: User) => {
-        console.log("data:",data)
+        if (setCurrentPlayer && data.username) {
+          setCurrentPlayer(data)
+          router.push('/')
+        }
       })
-
     } catch (error) {
       console.error('Error during login:', error);
     }
   }
-
   return (
     <div>
       <h2>Login</h2>
