@@ -6,8 +6,8 @@ import { usePlayerContext } from '@/context/players'
 const Login = () => {
   const router = useRouter()
   const { setCurrentPlayer } = usePlayerContext() || {}
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [username, setUsername] = useState<string>('')
+  const [password, setPassword] = useState<string>('')
 
   const handleLogin = async () => {
 
