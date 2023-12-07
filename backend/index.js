@@ -7,7 +7,6 @@ import db from './db/db.connection.js'
 import routes from './routes/index.js'
 import { generateRoutes, emitToPlayerRoom } from './helpers/index.js'
 import cors from 'cors'
-import jwt from 'jsonwebtoken'
 
 dotenv.config()
 
