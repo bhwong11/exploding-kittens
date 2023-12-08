@@ -1,11 +1,18 @@
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers } from "@/lib/hooks"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
 
-const multiCardActions = [null,null,actionTypes.multiple2,actionTypes.multiple3]
+type MultiCardActionsType = {
+  [key: number]: Actions
+}
+
+const multiCardActions:MultiCardActionsType = {
+  2:actionTypes.multiple2,
+  3:actionTypes.multiple3
+}
 
 export const Hand = ()=>{
   const {players,currentPlayer} =  usePlayerContext() || {}
@@ -13,27 +20,25 @@ export const Hand = ()=>{
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
   const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
 
+  const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
+
   const disableActions = (
     !selectedCards.length
     || (!multiCardActions[selectedCards.length] && selectedCards.length>1)
     || !(new Set(selectedCards.map(c=>c.type)).size === 1)
+    || (!singleCardActionType && selectedCards.length===1)
   )
 
   const cardActivateHandler = ()=>{
     if(!socket) return
     const multiCardAction = multiCardActions[selectedCards.length]
     if(multiCardAction){
-      if((new Set(selectedCards.map(c=>c.type)).size === 1)){
-        attemptActivate(multiCardAction)
-      }else{
-        socket?.emit('error','cards are not consistent')
-      }
+      attemptActivate(multiCardAction)
       return
     }
-    const cardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
 
-    if(selectedCards.length<=1 && cardActionType){
-      attemptActivate(cardActionType)
+    if(selectedCards.length<=1 && singleCardActionType){
+      attemptActivate(singleCardActionType)
     }
     socket.emit('discard-pile',[...selectedCards,...(discardPile ?? [])])
   }
@@ -65,7 +70,7 @@ export const Hand = ()=>{
       ))}
     </div>
     <button className="btn btn-blue" onClick={cardActivateHandler} disabled={disableActions}>
-      activate cards
+      activate card(s)
     </button>
   </div>
   )

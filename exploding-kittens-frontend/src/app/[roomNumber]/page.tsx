@@ -9,9 +9,8 @@ import {
   usePlayerSocket 
 } from "@/lib/hooks"
 import { actionTypes } from "@/data"
-import { Hand } from "@/app/[roomNumber]/Hand"
+import { Hand } from "@/app/[roomNumber]/hand"
 import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
-import { ErrorMessage } from "@/app/(components)/ErrorMessage"
 
 
 type RoomParams = {
@@ -22,7 +21,7 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {deck, turnCount, attackTurns,discardPile} = useGameStateContext() || {}
+  const {deck, turnCount} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -55,7 +54,6 @@ const Room = ({params}:RoomParams)=>{
       Room Number: {params.roomNumber}
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
-      <ErrorMessage/>
       <div className="border border-black">
         <h1>
           TEST Hook(To get this to work, you need to have 2 joined users with different usernames)
@@ -63,12 +61,6 @@ const Room = ({params}:RoomParams)=>{
         </h1>
         <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
           favor
-        </button>
-        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.seeTheFuture)}>
-          send see the future
-        </button>
-        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.attack)}>
-          attack
         </button>
         {showResponsePrompt && (
           <div>
@@ -118,15 +110,13 @@ const Room = ({params}:RoomParams)=>{
         <div className="h-[15rem] overflow-y-scroll">
           Deck:
           {JSON.stringify(deck)}
-          Discard:
-          {JSON.stringify(discardPile)}
         </div>
         <button onClick={createGameAssets} className="btn btn-blue">
             create game assets(need at least one joined user for this to work)
         </button>
       </div>
       <div className="border border-black">
-        <h1>turn count: {turnCount}, attack turns: {attackTurns}</h1>
+        <h1>{turnCount}</h1>
         <button className="btn btn-blue" onClick={()=>endTurn()}>
           end turn
         </button>
