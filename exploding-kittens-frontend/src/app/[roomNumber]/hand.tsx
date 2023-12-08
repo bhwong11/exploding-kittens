@@ -4,7 +4,7 @@ import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
 import { useState } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
-import ResponsePrompt from "@/app/[roomNumber]/ResponsePrompt"
+import ResponseAction from "@/app/[roomNumber]/ResponseAction"
 
 type MultiCardActionsType = {
   [key: number]: Actions
@@ -89,7 +89,7 @@ export const Hand = ()=>{
       <button className="btn btn-blue" onClick={()=>endTurn()} disabled={isTurnEnd || !isPlayerTurn}>
         end turn
       </button>
-      <ResponsePrompt/>
+      <ResponseAction/>
     </div>
   </div>
   )

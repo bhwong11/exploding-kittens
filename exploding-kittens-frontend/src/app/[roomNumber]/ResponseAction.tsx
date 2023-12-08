@@ -10,7 +10,7 @@ import {
 } from "@/lib/hooks"
 import { actionTypes } from "@/data"
 
-const ResponsePrompt = ()=>{
+const ResponseAction = ()=>{
 
   const {
     attemptActivate,
@@ -48,4 +48,4 @@ const ResponsePrompt = ()=>{
   )
 }
 
-export default ResponsePrompt
+export default ResponseAction
