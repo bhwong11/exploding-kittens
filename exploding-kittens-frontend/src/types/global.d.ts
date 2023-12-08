@@ -49,6 +49,7 @@ declare global{
     ['all-players']: (arg:Player[]) => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:{message:string}) => void
+    ['turn-count']: (arg:number) => void
     ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
       showToUser:string
@@ -72,6 +73,7 @@ declare global{
     ['clear-players']: () => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:string) => void
+    ['turn-count']: (arg:number) => void
     ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
       showToUser:string

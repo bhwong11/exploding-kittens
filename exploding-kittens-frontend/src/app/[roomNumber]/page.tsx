@@ -115,12 +115,6 @@ const Room = ({params}:RoomParams)=>{
             create game assets(need at least one joined user for this to work)
         </button>
       </div>
-      <div className="border border-black">
-        <h1>{turnCount}</h1>
-        <button className="btn btn-blue" onClick={()=>endTurn()}>
-          end turn
-        </button>
-      </div>
     </div>
   )
 }

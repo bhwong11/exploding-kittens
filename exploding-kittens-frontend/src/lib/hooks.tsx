@@ -56,8 +56,8 @@ export const usePlayerSocket=()=>{
   }
 }
 
-type useActivateResponseHandlersProps = {initListeners:boolean}
-export const useActivateResponseHandlers=({initListeners}:useActivateResponseHandlersProps={initListeners:false})=>{
+type UseActivateResponseHandlersProps = {initListeners:boolean}
+export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHandlersProps={initListeners:false})=>{
 
   const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
   const {players, currentPlayer} = usePlayerContext() || {}
@@ -282,8 +282,10 @@ export const useInitGame = () => {
   }
 }
 
-export const useTurns = ()=>{
+type UseTurnsProps = {initListeners:boolean}
+export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
   const {
+    socket,
     turnCount,
     attackTurns,
     setTurnCount,
@@ -296,12 +298,19 @@ export const useTurns = ()=>{
   const [isTurnEnd,setIsTurnEnd] = useState<boolean>(false)
 
   useEffect(()=>{
+    if(!socket || !initListeners) return
+      socket.on('turn-count',(data)=>{
+        if(setTurnCount)setTurnCount(data)
+      })
+  },[socket])
+
+  useEffect(()=>{
     //move up turn count at end of action chain in case of exploding cat and diffuse
     if(!currentActions?.length && isTurnEnd){
       if(attackTurns??0>0){
         if(setAttackTurns)setAttackTurns(prev=>prev-1)
       }else{
-        if(setTurnCount)setTurnCount(prev=>prev+1)
+        socket?.emit('turn-count',(turnCount ?? 0)+1)
       }
     }
   },[currentActions?.length])
@@ -320,7 +329,7 @@ export const useTurns = ()=>{
       if(attackTurns??0>0){
         if(setAttackTurns)setAttackTurns(prev=>prev-1)
       }else{
-        if(setTurnCount)setTurnCount(prev=>prev+1)
+        socket?.emit('turn-count',(turnCount ?? 0)+1)
       }
     }
   }
@@ -329,6 +338,7 @@ export const useTurns = ()=>{
 
   return {
     endTurn,
+    isTurnEnd,
     turnPlayer
   }
 }
