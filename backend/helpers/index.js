@@ -9,9 +9,9 @@ export const generateRoutes = (routesPathMap,app)=>{
   })
 }
 
-export const emitToPlayerRoom = (io,socket,event,data,customErrorMessage)=>{
-  if(io || !socket || !event || !data){
-    console.log('missing data')
+export const emitToPlayerRoom = (io,socket,event,emitData,customErrorMessage)=>{
+  if(io || !socket || !event || !emitData){
+    console.log('missing data io, socket, event, data',[!io, !socket || !event || !emitData])
   }
   const playerRoom = Array.from(socket.rooms)[1]
   if(!playerRoom){
@@ -19,7 +19,7 @@ export const emitToPlayerRoom = (io,socket,event,data,customErrorMessage)=>{
       message: customErrorMessage ?? 'no room found for player'
     })
   }
-  io.to(playerRoom).emit(event,data)
+  io.to(playerRoom).emit(event,emitData)
 }
 
 export const generateAccessToken = (user) => {

@@ -1,35 +1,52 @@
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
-import { useActivateResponseHandlers } from "@/lib/hooks"
-import { useEffect, useState } from "react"
+import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
+import { useState } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
+import ResponseAction from "@/app/[roomNumber]/ResponseAction"
 
-const multiCardActions = [null,null,actionTypes.multiple2,actionTypes.multiple3]
+type MultiCardActionsType = {
+  [key: number]: Actions
+}
+
+const multiCardActions:MultiCardActionsType = {
+  2:actionTypes.multiple2,
+  3:actionTypes.multiple3
+}
 
 export const Hand = ()=>{
   const {players,currentPlayer} =  usePlayerContext() || {}
-  const {discardPile,socket} =  useGameStateContext() || {}
+  const {socket,turnCount} =  useGameStateContext() || {}
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
+  const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
   const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
+
+
+  const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
+  const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
+  const isSelectedCardsSameType = new Set(selectedCards.map(c=>c.type)).size === 1
+
+  const disableActions = (
+    !selectedCards.length
+    || (!multiCardActions[selectedCards.length] && selectedCards.length>1)
+    || !isSelectedCardsSameType
+    || (!singleCardActionType && selectedCards.length===1)
+    || !isPlayerTurn
+  )
 
   const cardActivateHandler = ()=>{
     if(!socket) return
     const multiCardAction = multiCardActions[selectedCards.length]
     if(multiCardAction){
-      if((new Set(selectedCards.map(c=>c.type)).size === 1)){
-        attemptActivate(multiCardAction)
-      }else{
-        socket?.emit('error','cards are not consistent')
-      }
+      attemptActivate(multiCardAction,selectedCards)
       return
     }
-    const cardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0].type)
 
-    if(selectedCards.length<=1 && cardActionType){
-      attemptActivate(cardActionType)
+    if(selectedCards.length===1 && singleCardActionType){
+      attemptActivate(singleCardActionType,selectedCards)
     }
-    socket.emit('discard-pile',[...selectedCards,...(discardPile ?? [])])
+    setSelectedCards([])
   }
 
   const toggleSelected = (card:Card)=>{
@@ -40,11 +57,16 @@ export const Hand = ()=>{
     }
   }
 
+  const cardOnClickHandler = (card:Card)=>{
+    if(!isPlayerTurn) return
+    toggleSelected(card)
+  }
+
   const currentCards = players?.find(p=>p.username===currentPlayer?.username)?.cards
   return (
   <div>
+    hand:
     <div className="flex flex-wrap">
-      hand:
       {currentCards?.map(card=>(
         <div
           className={classNames(
@@ -52,15 +74,23 @@ export const Hand = ()=>{
             {"border-2 border-blue-500":selectedCards.find(c=>card.id===c.id)}
           )}
           key={card?.id}
-          onClick={()=>toggleSelected(card)}
+          onClick={()=>cardOnClickHandler(card)}
         >
           {JSON.stringify(card)}
         </div>
       ))}
     </div>
-    <button className="btn btn-blue" onClick={cardActivateHandler}>
-      activate cards
-    </button>
+    <div className="border border-black">
+      <p>turn count: {turnCount}</p>
+      <p>turn player: {turnPlayer?.username}</p>
+      <button className="btn btn-blue" onClick={cardActivateHandler} disabled={disableActions}>
+        activate card(s)
+      </button>
+      <button className="btn btn-blue" onClick={()=>endTurn()} disabled={isTurnEnd || !isPlayerTurn}>
+        end turn
+      </button>
+      <ResponseAction/>
+    </div>
   </div>
   )
 }

@@ -9,7 +9,7 @@ import { shuffleArray } from "@/lib/helpers"
 
 export const usePlayerSocket=()=>{
   const {setSocket,socket:currentSocket} = useGameStateContext() || {}
-  const {setPlayers,players,setCurrentPlayer} = usePlayerContext() || {}
+  const {setPlayers,players,setCurrentPlayer,currentPlayer} = usePlayerContext() || {}
 
   let socket:Socket<ServerToClientEvents, ClientToServerEvents> | null  = null
 
@@ -43,7 +43,7 @@ export const usePlayerSocket=()=>{
         username,
         ...(room?{room}:{})
       })
-      if(setCurrentPlayer) setCurrentPlayer({username})
+      if(setCurrentPlayer) setCurrentPlayer({...currentPlayer,username})
     }else{
       console.error('socket not initialized yet')
     }
@@ -56,11 +56,13 @@ export const usePlayerSocket=()=>{
   }
 }
 
-type useActivateResponseHandlersProps = {initListeners:boolean}
-export const useActivateResponseHandlers=({initListeners}:useActivateResponseHandlersProps={initListeners:false})=>{
+type UseActivateResponseHandlersProps = {initListeners:boolean}
+export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHandlersProps={initListeners:false})=>{
 
   const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
   const {players, currentPlayer} = usePlayerContext() || {}
+  const {discardCards} = useGameActions()
+
   const [showResponsePrompt, setShowResponsePrompt] = useState<boolean>(false)
   const [noResponses, setNoResponses] = useState<number>(0)
   const [allowedResponse, setAllowedResponse] = useState<ResponseActions | null | "all">("all")
@@ -135,7 +137,12 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
 
 
   //sends emit for action to be added to current stack and allowed responses
-  const attemptActivate = (action:Actions | null=null)=>{
+  const attemptActivate = (
+    action:Actions | null=null, 
+    cards?:Card[],
+    cardId?:number,
+    cardType?:CardType
+  )=>{
     //add card discard
     let newAllowedResponse: ResponseActions | null | "all" = actionTypes.nope
     let newAllowedUsers: string[] = (
@@ -152,6 +159,7 @@ export const useActivateResponseHandlers=({initListeners}:useActivateResponseHan
       newAllowedResponse = null
       newAllowedUsers = []
     }
+    discardCards(cards,cardId,cardType)
 
     socket?.emit('activate-attempt',{
       action,
@@ -282,8 +290,10 @@ export const useInitGame = () => {
   }
 }
 
-export const useTurns = ()=>{
+type UseTurnsProps = {initListeners:boolean}
+export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
   const {
+    socket,
     turnCount,
     attackTurns,
     setTurnCount,
@@ -296,12 +306,19 @@ export const useTurns = ()=>{
   const [isTurnEnd,setIsTurnEnd] = useState<boolean>(false)
 
   useEffect(()=>{
+    if(!socket || !initListeners) return
+      socket.on('turn-count',(data)=>{
+        if(setTurnCount)setTurnCount(data)
+      })
+  },[socket])
+
+  useEffect(()=>{
     //move up turn count at end of action chain in case of exploding cat and diffuse
     if(!currentActions?.length && isTurnEnd){
       if(attackTurns??0>0){
         if(setAttackTurns)setAttackTurns(prev=>prev-1)
       }else{
-        if(setTurnCount)setTurnCount(prev=>prev+1)
+        socket?.emit('turn-count',(turnCount ?? 0)+1)
       }
     }
   },[currentActions?.length])
@@ -315,12 +332,12 @@ export const useTurns = ()=>{
     setIsTurnEnd(true)
     const newCard = drawCard(currentPlayer?.username ?? '')
     if(newCard?.type === cardTypes.exploding.type){
-      attemptActivate(cardTypes.exploding.type)
+      attemptActivate(actionTypes.exploding,[newCard])
     }else{
       if(attackTurns??0>0){
         if(setAttackTurns)setAttackTurns(prev=>prev-1)
       }else{
-        if(setTurnCount)setTurnCount(prev=>prev+1)
+        socket?.emit('turn-count',(turnCount ?? 0)+1)
       }
     }
   }
@@ -329,6 +346,7 @@ export const useTurns = ()=>{
 
   return {
     endTurn,
+    isTurnEnd,
     turnPlayer
   }
 }
