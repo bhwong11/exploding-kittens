@@ -4,6 +4,7 @@ import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
 import { useState } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
+import ResponsePrompt from "@/app/[roomNumber]/ResponsePrompt"
 
 type MultiCardActionsType = {
   [key: number]: Actions
@@ -16,7 +17,7 @@ const multiCardActions:MultiCardActionsType = {
 
 export const Hand = ()=>{
   const {players,currentPlayer} =  usePlayerContext() || {}
-  const {discardPile,socket,turnCount} =  useGameStateContext() || {}
+  const {socket,turnCount} =  useGameStateContext() || {}
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
   const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
@@ -38,15 +39,14 @@ export const Hand = ()=>{
     if(!socket) return
     const multiCardAction = multiCardActions[selectedCards.length]
     if(multiCardAction){
-      attemptActivate(multiCardAction)
+      attemptActivate(multiCardAction,selectedCards)
       return
     }
 
-    if(selectedCards.length<=1 && singleCardActionType){
-      attemptActivate(singleCardActionType)
+    if(selectedCards.length===1 && singleCardActionType){
+      attemptActivate(singleCardActionType,selectedCards)
     }
     setSelectedCards([])
-    socket.emit('discard-pile',[...selectedCards,...(discardPile ?? [])])
   }
 
   const toggleSelected = (card:Card)=>{
@@ -89,6 +89,7 @@ export const Hand = ()=>{
       <button className="btn btn-blue" onClick={()=>endTurn()} disabled={isTurnEnd || !isPlayerTurn}>
         end turn
       </button>
+      <ResponsePrompt/>
     </div>
   </div>
   )

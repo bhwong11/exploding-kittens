@@ -21,24 +21,14 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {deck, turnCount} = useGameStateContext() || {}
+  const {deck} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
 
-
-  const {
-    attemptActivate,
-    allowedResponse,
-    showResponsePrompt,
-    sendNoResponse,
-    currentActions,
-    noResponses
-  } = useActivateResponseHandlers({initListeners:true})
   const {createGameAssets} = useInitGame()
 
   const {joinRoom, clearPlayers}= usePlayerSocket()
-  const {endTurn} = useTurns()
 
   useEffect(()=>{
     //add to .env
@@ -55,26 +45,6 @@ const Room = ({params}:RoomParams)=>{
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
       <div className="border border-black">
-        <h1>
-          TEST Hook(To get this to work, you need to have 2 joined users with different usernames)
-          {JSON.stringify(currentActions)} no response:{noResponses}
-        </h1>
-        <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
-          favor
-        </button>
-        {showResponsePrompt && (
-          <div>
-          <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
-            send nope {JSON.stringify(allowedResponse)}
-          </button>
-          <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.diffuse)}>
-            send diffuse {JSON.stringify(allowedResponse)}
-          </button>
-          <button className="btn btn-blue" onClick={()=>sendNoResponse()}>
-            no response
-          </button>
-          </div>
-        )}
         <ActionPrompt/>
       </div>
 
