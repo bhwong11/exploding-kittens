@@ -21,7 +21,10 @@ const io = new Server(server, {
   }
 })
 
-app.use(cors())
+app.use(cors({
+  credentials: true,
+  origin: true
+}))
 app.use(express.json())
 app.use(cookieParser())
 

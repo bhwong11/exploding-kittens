@@ -24,7 +24,7 @@ const login = async (req, res) => {
     const token = generateAccessToken(existingUser)
 
     return res
-      .cookie('accessToken', token, { httpOnly: true })
+      .cookie('accessToken', token, { httpOnly: false })
       .json({username, rooms, wins, id, _id})
       .status(200)
 
