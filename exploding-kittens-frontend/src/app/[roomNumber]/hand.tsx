@@ -1,6 +1,7 @@
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
+import { useCardActions } from "@/lib/actions"
 import { useState } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
@@ -21,17 +22,14 @@ export const Hand = ()=>{
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
   const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
+  const {isActionValidFromCards} = useCardActions()
 
 
   const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
-  const isSelectedCardsSameType = new Set(selectedCards.map(c=>c.type)).size === 1
 
   const disableActions = (
-    !selectedCards.length
-    || (!multiCardActions[selectedCards.length] && selectedCards.length>1)
-    || !isSelectedCardsSameType
-    || (!singleCardActionType && selectedCards.length===1)
+    !isActionValidFromCards(selectedCards)
     || !isPlayerTurn
   )
 
