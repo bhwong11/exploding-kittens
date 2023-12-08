@@ -70,8 +70,11 @@ io.on('connection', (socket) => {
     if(!rooms[data.room]){
       rooms[data.room] = {
         players:[],
-        deck:[],
-        discardPile:[]
+        gameState:{
+          turnCount:0,
+          deck:[],
+          discardPile:[]
+        }
       }
     }
 
@@ -106,18 +109,18 @@ io.on('connection', (socket) => {
     console.log('deck',data)
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
-      rooms[playerRoom].deck = data
+      rooms[playerRoom].gameState.deck = data
     }
-    emitToPlayerRoom(io,socket,'deck',rooms[playerRoom]?.deck ?? [])
+    emitToPlayerRoom(io,socket,'deck',rooms[playerRoom]?.gameState.deck ?? [])
   })
 
   socket.on('discard-pile',(data)=>{
     console.log('discard-pile',data)
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
-      rooms[playerRoom].discardPile = data
+      rooms[playerRoom].gameState.discardPile = data
     }
-    emitToPlayerRoom(io,socket,'discard-pile',rooms[playerRoom]?.discardPile ?? [])
+    emitToPlayerRoom(io,socket,'discard-pile',rooms[playerRoom]?.gameState.discardPile ?? [])
   })
 
   socket.on('all-players',(data)=>{
@@ -136,6 +139,15 @@ io.on('connection', (socket) => {
       rooms[playerRoom].players = []
     }
     emitToPlayerRoom(io,socket,'all-players', rooms[playerRoom].players)
+  })
+
+  socket.on('turn-count',(data)=>{
+    console.log('turn-count',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.turnCount = data
+    }
+    emitToPlayerRoom(io,socket,'turn-count', data)
   })
 
   socket.on('activate-attempt',(data)=>{

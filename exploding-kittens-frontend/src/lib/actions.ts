@@ -5,8 +5,8 @@ import { useState } from "react"
 import { addCardsToHand, removeCardsFromHand } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
-  const { deck,socket} = useGameStateContext() || {}
-  const {players}= usePlayerContext() || {}
+  const { deck,socket,discardPile} = useGameStateContext() || {}
+  const {players,currentPlayer}= usePlayerContext() || {}
 
   const playerCurrentHand = (playerUsername:string)=>{
     return players?.find(p=>p.username === playerUsername)?.cards ?? []
@@ -19,6 +19,10 @@ export const useGameActions = ()=>{
       newPlayers[currPlayerIndx].cards = cards
     }
     socket?.emit('all-players',newPlayers)
+  }
+
+  const addToDiscard = (cards:Card[])=>{
+    socket?.emit('discard-pile',[...(discardPile??[]),...cards])
   }
   
   const drawCard = (playerUsername:string) =>{
@@ -34,10 +38,40 @@ export const useGameActions = ()=>{
     }
   }
 
+  //can remove single card based on id or types, as well as cards
+  const discardCards = (cards?:Card[],cardId?:number | null,cardType?:CardType | null)=>{
+    if(!cardId && !cardType && !cards) {
+      console.error('discard card function failed with missing both cardId and cardType args')
+      return
+    }
+
+    const player = players?.find(player=>player.username===currentPlayer?.username)
+
+    const discardedCards = player?.cards?.filter(card=>{
+      //cardId is the prioritized arg
+      const cardInputIds = cards?.map(c=>c.id) ?? []
+      return cardInputIds.includes(card.id)
+      || card.id===cardId
+      || cardType===card.type
+    }) ?? []
+
+    const playerNewCards = player?.cards?.filter(
+      card=>!discardedCards?.map(c=>c.id).includes(card.id)
+    )
+
+    if(!playerNewCards || !currentPlayer?.username){
+      console.error('discard card function failed with missing new cards and currentPlayer.username')
+      return
+    }
+    setPlayerHand(playerNewCards ,currentPlayer?.username)
+    addToDiscard(discardedCards)
+  }
+
   const actions  = {
     drawCard,
     setPlayerHand,
-    playerCurrentHand
+    playerCurrentHand,
+    discardCards
   }
 
   return actions
