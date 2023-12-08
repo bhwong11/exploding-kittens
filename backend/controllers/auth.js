@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt'
 import User from '../models/User.js'
+import { generateAccessToken } from '../helpers/index.js'
 
 const login = async (req, res) => {
   try {
@@ -19,8 +20,14 @@ const login = async (req, res) => {
     }
     
     const { username, rooms, wins, id, _id } = existingUser
-    return res.json({username, rooms, wins, id, _id}).status(200)
-    // need to set up error handling from back -> frontend
+
+    const token = generateAccessToken(existingUser)
+
+    return res
+      .cookie('accessToken', token, { httpOnly: true })
+      .json({username, rooms, wins, id, _id})
+      .status(200)
+
   } catch (e) {
     res.json({ error: `error logging in ${e}`})
   }

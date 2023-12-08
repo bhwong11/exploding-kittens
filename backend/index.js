@@ -7,6 +7,7 @@ import db from './db/db.connection.js'
 import routes from './routes/index.js'
 import { generateRoutes, emitToPlayerRoom } from './helpers/index.js'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 
 dotenv.config()
 
@@ -22,6 +23,7 @@ const io = new Server(server, {
 
 app.use(cors())
 app.use(express.json())
+app.use(cookieParser())
 
 app.get('/', async (req, res) => {
   let collection = db.collection("posts");
