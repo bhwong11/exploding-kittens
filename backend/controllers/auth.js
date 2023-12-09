@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import User from '../models/User.js'
-import { generateAccessToken } from '../helpers/index.js'
+import { generateToken } from '../helpers/index.js'
 
 const login = async (req, res) => {
   try {
@@ -21,10 +21,12 @@ const login = async (req, res) => {
     
     const { username, rooms, wins, id, _id } = existingUser
 
-    const token = generateAccessToken(existingUser)
+    const accessToken = generateToken(existingUser, 'access')
+    const refreshToken = generateToken(existingUser, 'refresh')
 
     return res
-      .cookie('accessToken', token, { httpOnly: false })
+      .header('Authorization', accessToken)
+      .cookie('refreshToken', refreshToken, { httpOnly: false })
       .json({username, rooms, wins, id, _id})
       .status(200)
 

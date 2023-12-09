@@ -22,14 +22,17 @@ export const emitToPlayerRoom = (io,socket,event,emitData,customErrorMessage)=>{
   io.to(playerRoom).emit(event,emitData)
 }
 
-export const generateAccessToken = (user) => {
+export const generateToken = (user, type) => {
   const payload = {
     id: user.id,
     username: user.username
   }
 
   const secret = process.env.JWT_SECRET
-  const options = { expiresIn: '1h' }
+
+  let options
+  if (type === 'access') options = { expiresIn: 1000 * 60 * 15 }
+  if (type === 'refresh') options = { expiresIn: 1000 * 60 * 60 * 24 }
 
   return jwt.sign(payload, secret, options)
 }
