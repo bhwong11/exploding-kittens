@@ -37,7 +37,7 @@ export const generateToken = (user, type) => {
   return jwt.sign(payload, secret, options)
 }
 
-export const verifyAccessToken = (token) => {
+export const verifyToken = (token) => {
   const secret = process.env.JWT_SECRET
 
   try {
@@ -54,7 +54,7 @@ export const authenticateToken = (req, res, next) => {
 
   if (!token) return res.sendStatus(401)
 
-  const result = verifyAccessToken(token)
+  const result = verifyToken(token)
 
   if (!result.success) return res.status(403).json({ error: result.error })
 

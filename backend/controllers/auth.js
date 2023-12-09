@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import User from '../models/User.js'
-import { generateToken } from '../helpers/index.js'
+import { generateToken, verifyToken } from '../helpers/index.js'
 
 const login = async (req, res) => {
   try {
@@ -21,12 +21,9 @@ const login = async (req, res) => {
     
     const { username, rooms, wins, id, _id } = existingUser
 
-    const accessToken = generateToken(existingUser, 'access')
-    const refreshToken = generateToken(existingUser, 'refresh')
-
     return res
-      .header('Authorization', accessToken)
-      .cookie('refreshToken', refreshToken, { httpOnly: false })
+      .header('Authorization', generateToken(existingUser, 'access'))
+      .cookie('refreshToken', generateToken(existingUser, 'refresh'), { httpOnly: false })
       .json({username, rooms, wins, id, _id})
       .status(200)
 
@@ -35,6 +32,23 @@ const login = async (req, res) => {
   }
 }
 
+const refresh = async (req, res) => {
+  const refreshToken = req.cookies['refreshToken']
+  if (!refreshToken) return res.status(401).send('Access Denied. No refresh token provided.')
+
+  try {
+    const verifiedUser = verifyToken(refreshToken)['data']
+    
+    return res
+      .header('Authorization', generateToken(verifiedUser, 'access'))
+      .send(verifiedUser) 
+
+  } catch (e) {
+    res.json({ error: `error refreshing token: ${e}`})
+  }
+}
+
 export default {
-  login
+  login,
+  refresh
 }
