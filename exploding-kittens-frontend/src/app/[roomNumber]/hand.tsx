@@ -1,8 +1,8 @@
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
-import { useCardActions } from "@/lib/actions"
-import { useState } from "react"
+import { useGameActions } from "@/lib/actions"
+import { useState, useEffect } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
 import ResponseAction from "@/app/[roomNumber]/ResponseAction"
@@ -22,15 +22,20 @@ export const Hand = ()=>{
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
   const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
-  const {isActionValidFromCards} = useCardActions()
-
+  const {isActionValidFromCards,validResponseCards} = useGameActions()
 
   const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
 
+  useEffect(()=>{
+    if(validResponseCards.length>0 && !isPlayerTurn){
+      setSelectedCards(validResponseCards)
+    }
+  },[validResponseCards.length])
+
   const disableActions = (
     !isActionValidFromCards(selectedCards)
-    || !isPlayerTurn
+    || (!isPlayerTurn && !validResponseCards.length)
   )
 
   const cardActivateHandler = ()=>{
@@ -38,7 +43,6 @@ export const Hand = ()=>{
     const multiCardAction = multiCardActions[selectedCards.length]
     if(multiCardAction){
       attemptActivate(multiCardAction,selectedCards)
-      return
     }
 
     if(selectedCards.length===1 && singleCardActionType){

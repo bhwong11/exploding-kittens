@@ -1,16 +1,17 @@
 "use client"
-import {useEffect, useState } from "react"
-import { usePlayerContext } from "@/context/players"
-import { useGameStateContext } from "@/context/gameState"
 import {
   useActivateResponseHandlers,
-  useInitGame,
-  useTurns,
-  usePlayerSocket 
 } from "@/lib/hooks"
-import { actionTypes } from "@/data"
+import { useGameActions } from "@/lib/actions"
+import { usePlayerContext } from "@/context/players"
+import { actionTypes,responseActionsTypes } from "@/data"
 
 const ResponseAction = ()=>{
+  const {
+    currentPlayer,
+    players
+  } = usePlayerContext() || {}
+  const {validResponseCards} =  useGameActions() || {}
 
   const {
     attemptActivate,
@@ -28,6 +29,7 @@ const ResponseAction = ()=>{
           TEST Hook(To get this to work, you need to have 2 joined users with different usernames)
           {JSON.stringify(currentActions)} no response:{noResponses}
         </h1>
+        {JSON.stringify(validResponseCards)}
         <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
           Test action: favor
         </button>

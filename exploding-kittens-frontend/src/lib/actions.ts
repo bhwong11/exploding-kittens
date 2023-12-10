@@ -1,15 +1,14 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
-import { actionTypes, cardTypes } from "@/data"
+import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
 import { useState } from "react"
 import { addCardsToHand, removeCardsFromHand } from "@/lib/helpers"
-import { cursorTo } from "readline"
 
 export const useGameActions = ()=>{
-  const { deck,socket,discardPile} = useGameStateContext() || {}
+  const { deck,socket,discardPile,currentActions} = useGameStateContext() || {}
   const {players,currentPlayer}= usePlayerContext() || {}
 
-  const playerCurrentHand = (playerUsername:string)=>{
+  const getPlayerCurrentHand = (playerUsername:string)=>{
     return players?.find(p=>p.username === playerUsername)?.cards ?? []
   }
 
@@ -30,7 +29,7 @@ export const useGameActions = ()=>{
     if(deck){
       const newCard = deck[deck.length-1]
       setPlayerHand(
-        [ ...playerCurrentHand(playerUsername),newCard]
+        [ ...getPlayerCurrentHand(playerUsername),newCard]
         ,playerUsername
       )
       const newDeck = deck.slice(0,deck.length-1)
@@ -68,11 +67,57 @@ export const useGameActions = ()=>{
     addToDiscard(discardedCards)
   }
 
+    const singleCardActionRequirements = {
+    [actionTypes.nope]:()=>(
+      (currentActions?.length ?? 0)>0 ?? false
+    ),
+    [actionTypes.diffuse]:()=>(
+      currentActions?.includes(actionTypes.exploding) ?? false
+    ),
+  }
+
+  const multiCardActionRequirements:{[key:number]:Function} = {
+    2:(selectedCards:Card[])=>(
+      selectedCards.length===2 && new Set(selectedCards.map(c=>c.type)).size === 1
+    ),
+    3:(selectedCards:Card[])=>(
+      selectedCards.length===3 && new Set(selectedCards.map(c=>c.type)).size === 1
+    ),
+  }
+
+  const isActionValidFromCards=(selectedCards:Card[])=>{
+    if(!selectedCards.length) return false
+
+    if(selectedCards.length===1){
+      const cardInActions = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
+      if(!cardInActions)return false
+
+      const singleCardActionType = Object.keys(singleCardActionRequirements).find(aType=>aType===selectedCards[0].type) as keyof typeof singleCardActionRequirements
+      if(singleCardActionType){
+        return singleCardActionRequirements[singleCardActionType]()
+      }
+    }
+
+    if(selectedCards.length>1){
+      if(multiCardActionRequirements[selectedCards.length]){
+        return multiCardActionRequirements[selectedCards.length](selectedCards)
+      }
+    }
+    return true
+  }
+
+  const validResponseCards = players?.find(player=>player.username===currentPlayer?.username)?.cards.filter(card=>(
+    responseActionsTypes.includes(card.type as typeof responseActionsTypes[number])
+    && isActionValidFromCards([card])
+  )) ?? []
+
   const actions  = {
     drawCard,
     setPlayerHand,
-    playerCurrentHand,
-    discardCards
+    getPlayerCurrentHand,
+    discardCards,
+    isActionValidFromCards,
+    validResponseCards
   }
 
   return actions
@@ -221,49 +266,10 @@ export const useCardActions = ()=>{
     [actionTypes.skip]:()=>null,
   }
 
-  const singleCardActionRequirements = {
-    [actionTypes.nope]:()=>(
-      (currentActions?.length ?? 0)>0 ?? false
-    ),
-    [actionTypes.diffuse]:()=>(
-      currentActions?.includes(actionTypes.exploding) ?? false
-    ),
-  }
-
-  const multiCardActionRequirements:{[key:number]:Function} = {
-    2:(selectedCards:Card[])=>(
-      selectedCards.length===2 && new Set(selectedCards.map(c=>c.type)).size === 1
-    ),
-    3:(selectedCards:Card[])=>(
-      selectedCards.length===3 && new Set(selectedCards.map(c=>c.type)).size === 1
-    ),
-  }
-
-  const isActionValidFromCards=(selectedCards:Card[])=>{
-    if(!selectedCards.length) return false
-
-    if(selectedCards.length===1){
-      const cardInActions = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
-      if(!cardInActions)return false
-
-      const singleCardActionType = Object.keys(singleCardActionRequirements).find(aType=>aType===selectedCards[0].type) as keyof typeof singleCardActionRequirements
-      if(singleCardActionType){
-        return singleCardActionRequirements[singleCardActionType]()
-      }
-    }
-    
-    if(selectedCards.length>1){
-      if(multiCardActionRequirements[selectedCards.length]){
-        return multiCardActionRequirements[selectedCards.length](selectedCards)
-      }
-    }
-    return true
-  }
 
   return {
     actions,
     actionsComplete,
     setActionsComplete,
-    isActionValidFromCards
   }
 }
