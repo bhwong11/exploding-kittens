@@ -1,12 +1,13 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { addCardsToHand, removeCardsFromHand } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
   const { deck,socket,discardPile,currentActions} = useGameStateContext() || {}
   const {players,currentPlayer}= usePlayerContext() || {}
+  const playerCards = players?.find(player=>player.username===currentPlayer?.username)?.cards
 
   const getPlayerCurrentHand = (playerUsername:string)=>{
     return players?.find(p=>p.username === playerUsername)?.cards ?? []
@@ -106,10 +107,10 @@ export const useGameActions = ()=>{
     return true
   }
 
-  const validResponseCards = players?.find(player=>player.username===currentPlayer?.username)?.cards.filter(card=>(
+  const validResponseCards = useMemo(()=>playerCards?.filter(card=>(
     responseActionsTypes.includes(card.type as typeof responseActionsTypes[number])
     && isActionValidFromCards([card])
-  )) ?? []
+  )) ?? [],[playerCards?.length, isActionValidFromCards])
 
   const actions  = {
     drawCard,

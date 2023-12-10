@@ -2,10 +2,12 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
 import { useGameActions } from "@/lib/actions"
-import { useState, useEffect } from "react"
+import { useState, useEffect,lazy, Suspense  } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
-import ResponseAction from "@/app/[roomNumber]/ResponseAction"
+
+const ResponseAction = lazy(()=>import("@/app/[roomNumber]/ResponseAction"))
+
 
 type MultiCardActionsType = {
   [key: number]: Actions
@@ -28,7 +30,7 @@ export const Hand = ()=>{
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
 
   useEffect(()=>{
-    if(validResponseCards.length>0 && !isPlayerTurn){
+    if(!isPlayerTurn){
       setSelectedCards(validResponseCards)
     }
   },[validResponseCards.length])
@@ -91,7 +93,11 @@ export const Hand = ()=>{
       <button className="btn btn-blue" onClick={()=>endTurn()} disabled={isTurnEnd || !isPlayerTurn}>
         end turn
       </button>
-      <ResponseAction/>
+      {!!currentCards?.length && 
+      <Suspense fallback={<>loading...</>}>
+        <ResponseAction/>
+      </Suspense>
+      }
     </div>
   </div>
   )
