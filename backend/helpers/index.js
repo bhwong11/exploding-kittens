@@ -31,8 +31,8 @@ export const generateToken = (user, type) => {
   const secret = process.env.JWT_SECRET
 
   let options
-  if (type === 'access') options = { expiresIn: 1000 * 60 * 15 }
-  if (type === 'refresh') options = { expiresIn: 1000 * 60 * 60 * 24 }
+  if (type === 'access') options = { expiresIn: 60 * 30 }
+  if (type === 'refresh') options = { expiresIn: 60 * 60 * 24 }
 
   return jwt.sign(payload, secret, options)
 }

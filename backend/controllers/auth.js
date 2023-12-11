@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import User from '../models/User.js'
-import { generateToken, verifyToken } from '../helpers/index.js'
+import { generateToken, verifyToken, authenticateToken } from '../helpers/index.js'
 
 const login = async (req, res) => {
   try {
@@ -41,6 +41,7 @@ const refresh = async (req, res) => {
     
     return res
       .header('Authorization', generateToken(verifiedUser, 'access'))
+      .cookie('refreshToken', generateToken(verifiedUser, 'refresh'), { httpOnly: false })
       .send(verifiedUser) 
 
   } catch (e) {
