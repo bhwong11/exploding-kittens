@@ -56,7 +56,7 @@ const Hand = ()=>{
 
   const disableActions = (
     !isActionValidFromCards(selectedCards)
-    || (!isPlayerTurn && !validResponseCards.length)
+    || !isPlayerTurn
   )
 
   const cardActivateHandler = ()=>{

@@ -39,9 +39,10 @@ const ResponseAction = ()=>{
 
             <div className="flex">
               {validResponseCards.map(card=>(
-                <div key={`response-action-${card.id}`}>
+                <div key={`response-action-${card.id}`} className="border border-black flex flex-col">
+                  {card.type} - {card.id}
                   <button className="btn btn-blue" onClick={()=>responseCardClickHandler(card)}>
-                    {card.type} 
+                    activate
                   </button>
                 </div>)
               )}
