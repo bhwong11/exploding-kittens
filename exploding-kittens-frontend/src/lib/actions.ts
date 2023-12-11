@@ -143,7 +143,7 @@ export const useCardActions = ()=>{
   const [actionsComplete,setActionsComplete]=useState<number>(0)
   const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
 
-    //this needs to be added on each submitCallBack to trigger the next event
+  //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
   const submitResponseEvent = (
     showToUser:string,
@@ -176,9 +176,11 @@ export const useCardActions = ()=>{
     if(setActionPrompt) {
       setActionPrompt([
           {
-            show:true,
+            text:'Choose a player to steal a card from',
             options:{
-              username:[...players?.map(p=>({
+              username:[...players
+              ?.filter(p=>p.username!==currentPlayer?.username)
+              ?.map(p=>({
                 value:p.username,
                 display:p.username
               }))??[]]
@@ -195,7 +197,7 @@ export const useCardActions = ()=>{
             }
           },
           {
-            show:true,
+            text:'Choose a card to give away',
             options:{},
             submitCallBack:(formData:FormData)=>{
               const cardType = formData.get('card')
@@ -224,7 +226,6 @@ export const useCardActions = ()=>{
     if(setActionPrompt) {
       setActionPrompt([
           {
-            show:true,
             text:`${deck?.slice(deck.length-3).map(
               c=>`${c.type} - ${c.id}`
             ).join()}`,

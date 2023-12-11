@@ -25,7 +25,6 @@ declare global{
     cards: Card[]
   }
   type ActionPromptData = {
-    show: boolean
     text?:string
     options:{
       [key:string]:{value:string,display:string}[]

@@ -25,6 +25,7 @@ export const usePlayerSocket=()=>{
     })
 
     return () => {
+      console.log('Client disconnected')
       socket?.disconnect();
     }
   },[])
@@ -125,6 +126,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     })
 
     return ()=>{
+      console.log('Client disconnected')
       socket?.disconnect();
     }
   },[socket?.id,currentPlayer?.username])
@@ -176,7 +178,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
 }
 
 export const useInitGame = () => {
-  const {setDeck,socket,setDiscardPile} = useGameStateContext() || {}
+  const {setDeck,socket,setDiscardPile,deck,discardPile} = useGameStateContext() || {}
   const {players} = usePlayerContext() || {}
   const [_,startTransition] = useTransition()
 
@@ -196,9 +198,18 @@ export const useInitGame = () => {
     })
 
     return ()=>{
+      console.log('Client disconnected')
       socket?.disconnect();
     }
   },[socket])
+
+  useEffect(()=>{
+    if(!deck?.length && !!discardPile?.length){
+      const newDeck = shuffleArray(discardPile)
+      socket?.emit('deck',newDeck)
+      socket?.emit('discard-pile',[])
+    }
+  },[deck?.length])
 
   let cardsCreatedCount = 0
 
@@ -256,7 +267,7 @@ export const useInitGame = () => {
   const createDeck=()=>{
       const randomizedDeck = [
         ...initialDeck,
-        ...explodingKittenCards,
+        ...explodingKittenCards.slice(0,(players?.length ?? 1)-1),
         ...diffuseCards
       ].sort(() => Math.random() - 0.5)
       socket?.emit('deck',[...randomizedDeck,{

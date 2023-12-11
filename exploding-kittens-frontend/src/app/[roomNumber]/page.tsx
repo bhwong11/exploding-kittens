@@ -7,7 +7,6 @@ import {
   usePlayerSocket 
 } from "@/lib/hooks"
 import Hand from "@/app/[roomNumber]/hand"
-import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
 
 
 type RoomParams = {
@@ -18,7 +17,7 @@ type RoomParams = {
 
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext()
-  const {deck} = useGameStateContext() || {}
+  const {deck,discardPile} = useGameStateContext() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -41,10 +40,6 @@ const Room = ({params}:RoomParams)=>{
       Room Number: {params.roomNumber}
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
-      <div className="border border-black">
-        <ActionPrompt/>
-      </div>
-
       <div className="border border-black">
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
@@ -77,6 +72,8 @@ const Room = ({params}:RoomParams)=>{
         <div className="h-[15rem] overflow-y-scroll">
           Deck:
           {JSON.stringify(deck)}
+          Discard:
+          {JSON.stringify(discardPile)}
         </div>
         <button onClick={createGameAssets} className="btn btn-blue">
             create game assets(need at least one joined user for this to work)

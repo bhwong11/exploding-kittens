@@ -7,6 +7,7 @@ import classNames from 'classnames'
 import { actionTypes } from "@/data"
 
 const ResponseAction = lazy(()=>import("@/app/[roomNumber]/ResponseAction"))
+const ActionPrompt = lazy(()=>import("@/app/[roomNumber]/ActionPrompt"))
 
 
 type MultiCardActionsType = {
@@ -29,15 +30,15 @@ const Hand = ()=>{
 
   const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
+  useEffect(()=>{
+    setSelectedCards([])
+  },[turnCount])
 
+  //used to highlight cards on response action
   useEffect(()=>{
     if(!allowedResponseUsers.includes(currentPlayer?.username || '')) return
     setSelectedCards(validResponseCards)
   },[allowedResponseUsers])
-
-  useEffect(()=>{
-    setSelectedCards([])
-  },[turnCount])
 
   useEffect(()=>{
     if(!socket) return
@@ -112,9 +113,10 @@ const Hand = ()=>{
         end turn
       </button>
       {!!currentCards?.length && 
-      <Suspense fallback={<>loading...</>}>
-        <ResponseAction/>
-      </Suspense>
+        <Suspense fallback={null}>
+          <ResponseAction/>
+          <ActionPrompt/>
+        </Suspense>
       }
     </div>
   </div>
