@@ -68,7 +68,7 @@ export const useGameActions = ()=>{
     addToDiscard(discardedCards)
   }
 
-    const singleCardActionRequirements = {
+  const singleCardActionRequirements = {
     [actionTypes.nope]:()=>(
       ((currentActions?.length ?? 0)>0 
       && currentActions?.[(currentActions?.length ?? 1)-1] !== actionTypes.exploding
@@ -96,7 +96,9 @@ export const useGameActions = ()=>{
       const cardInActions = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
       if(!cardInActions)return false
 
-      const singleCardActionType = Object.keys(singleCardActionRequirements).find(aType=>aType===selectedCards[0].type) as keyof typeof singleCardActionRequirements
+      const singleCardActionType = Object.keys(singleCardActionRequirements)
+        .find(aType=>aType===selectedCards[0].type) as keyof typeof singleCardActionRequirements
+
       if(singleCardActionType){
         return singleCardActionRequirements[singleCardActionType]()
       }

@@ -135,7 +135,6 @@ io.on('connection', (socket) => {
   socket.on('clear-players',()=>{
     console.log('clear-players')
     const playerRoom = Array.from(socket.rooms)[1]
-    console.log('playerRoom',playerRoom,socket.rooms)
     if(rooms[playerRoom]){
       rooms[playerRoom].players = []
       emitToPlayerRoom(io,socket,'all-players', rooms[playerRoom].players)
