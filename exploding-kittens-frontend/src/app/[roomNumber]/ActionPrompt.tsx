@@ -17,7 +17,8 @@ export const ActionPrompt = ()=>{
   useEffect(()=>{
     setShowToUser(turnPlayer?.username ?? '')
   },[!!actionPrompt])
- 
+
+
   useEffect(()=>{
     if(!socket) return
     socket?.on('next-action-response',(data)=>{

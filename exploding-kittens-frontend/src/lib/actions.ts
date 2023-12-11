@@ -70,7 +70,10 @@ export const useGameActions = ()=>{
 
     const singleCardActionRequirements = {
     [actionTypes.nope]:()=>(
-      (currentActions?.length ?? 0)>0 ?? false
+      ((currentActions?.length ?? 0)>0 
+      && currentActions?.[(currentActions?.length ?? 1)-1] !== actionTypes.exploding
+      && currentActions?.[(currentActions?.length ?? 1)-1] !== actionTypes.diffuse)
+      ?? false
     ),
     [actionTypes.diffuse]:()=>(
       currentActions?.includes(actionTypes.exploding) ?? false
@@ -131,7 +134,6 @@ export const useCardActions = ()=>{
     deck,
     socket,
     turnCount,
-    currentActions,
     setCurrentActions,
     setActionPrompt,
     setAttackTurns,

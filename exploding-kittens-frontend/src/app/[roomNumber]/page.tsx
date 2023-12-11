@@ -6,7 +6,7 @@ import {
   useInitGame,
   usePlayerSocket 
 } from "@/lib/hooks"
-import { Hand } from "@/app/[roomNumber]/hand"
+import Hand from "@/app/[roomNumber]/hand"
 import { ActionPrompt } from "@/app/[roomNumber]/ActionPrompt"
 
 

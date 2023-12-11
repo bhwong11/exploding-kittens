@@ -16,19 +16,17 @@ const ResponseAction = ()=>{
 
   const {
     attemptActivate,
-    allowedResponse,
     showResponsePrompt,
     sendNoResponse,
     currentActions,
     noResponses
   } = useActivateResponseHandlers({initListeners:true})
 
-  //automatically
-  useEffect(()=>{
-    if(showResponsePrompt && !validResponseCards.length){
-      sendNoResponse()
-    }
-  },[showResponsePrompt])
+  const responseCardClickHandler = (card:Card)=>{
+    const cardAction = Object.values(actionTypes).find(aType=>aType === card.type)
+    if(!cardAction) return
+    attemptActivate(cardAction,[card])
+  }
 
 
   return (
@@ -40,21 +38,31 @@ const ResponseAction = ()=>{
         <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.favor)}>
           Test action: favor
         </button>
-        {showResponsePrompt && validResponseCards.length && (
+        {showResponsePrompt && (
           <div className="bg-pink-300">
-            would you like to activate any of the following cards in response?: 
+          {validResponseCards.length?(
+          <>
+            would you like to activate any of the following cards in response?:
+          </>):
+          (<>
+            You have no cards to respond, click no response when ready
+          </>)
+          }
+
           {validResponseCards.map(card=>(
-            <div>
-              {card.type}
+            <div key={`response-action-${card.id}`}>
+              <button className="btn btn-blue" onClick={()=>responseCardClickHandler(card)}>
+                {card.type} 
+              </button>
             </div>)
           )}
             
-          <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
-            send nope {JSON.stringify(allowedResponse)}
+          {/* <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.nope)}>
+            send nope
           </button>
           <button className="btn btn-blue" onClick={()=>attemptActivate(actionTypes.diffuse)}>
-            send diffuse {JSON.stringify(allowedResponse)}
-          </button>
+            send diffuse
+          </button> */}
           <button className="btn btn-blue" onClick={()=>sendNoResponse()}>
             no response
           </button>

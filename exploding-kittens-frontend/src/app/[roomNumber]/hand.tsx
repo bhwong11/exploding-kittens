@@ -2,7 +2,7 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
 import { useGameActions } from "@/lib/actions"
-import { useState, useEffect,lazy, Suspense  } from "react"
+import { useState, useEffect,lazy, Suspense } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
 
@@ -18,22 +18,40 @@ const multiCardActions:MultiCardActionsType = {
   3:actionTypes.multiple3
 }
 
-export const Hand = ()=>{
+const Hand = ()=>{
   const {players,currentPlayer} =  usePlayerContext() || {}
   const {socket,turnCount} =  useGameStateContext() || {}
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
+  const [allowedResponseUsers,setAllowedResponseUsers] = useState<string[]>([])
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
-  const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
+  const {attemptActivate} = useActivateResponseHandlers()
   const {isActionValidFromCards,validResponseCards} = useGameActions()
 
   const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
 
   useEffect(()=>{
-    if(!isPlayerTurn){
-      setSelectedCards(validResponseCards)
+    if(!allowedResponseUsers.includes(currentPlayer?.username || '')) return
+    setSelectedCards(validResponseCards)
+  },[allowedResponseUsers])
+
+  useEffect(()=>{
+    setSelectedCards([])
+  },[turnCount])
+
+  useEffect(()=>{
+    if(!socket) return
+    socket?.on('activate-attempt',(data)=>{
+      setSelectedCards([])
+      setAllowedResponseUsers(data.newAllowedUsers)
+    })
+    socket?.on('no-response',()=>{
+      setSelectedCards([])
+    })
+    return ()=>{
+      socket?.disconnect();
     }
-  },[validResponseCards.length])
+  },[socket])
 
   const disableActions = (
     !isActionValidFromCards(selectedCards)
@@ -73,11 +91,11 @@ export const Hand = ()=>{
     <div className="flex flex-wrap">
       {currentCards?.map(card=>(
         <div
+          key={`card-${card.id}`}
           className={classNames(
             "hand-card border border-black w-[10rem] break-words",
             {"border-2 border-blue-500":selectedCards.find(c=>card.id===c.id)}
           )}
-          key={card?.id}
           onClick={()=>cardOnClickHandler(card)}
         >
           {JSON.stringify(card)}
@@ -102,3 +120,5 @@ export const Hand = ()=>{
   </div>
   )
 }
+
+export default Hand
