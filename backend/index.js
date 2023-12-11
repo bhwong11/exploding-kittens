@@ -40,19 +40,39 @@ db.once('connected', () => {
   console.log('DB connected')
 })
 
-let rooms = {}
 const roomMax = 4
+const disconnectTimeout = 10000
+const timeoutIds = {}
+
+let rooms = {}
 
 io.on('connection', (socket) => {
   console.log('a player connected',socket.id);
   socket.on('disconnecting', () => {
-    const playerRoom = Array.from(socket.rooms)[1]
-    if(rooms[playerRoom]){
-      rooms[playerRoom].players = rooms[playerRoom]?.players?.filter(player=>player.socketId!==socket.id)
-    }
-    console.log('a player disconnected',socket.id,rooms[playerRoom]);
-    if(rooms[playerRoom]){
-      io.sockets.emit('all-players',rooms[playerRoom].players ?? [])
+    const playerRoomNumber = Array.from(socket.rooms)[1]
+
+    if(rooms[playerRoomNumber]){
+      rooms[playerRoomNumber].players = rooms[playerRoomNumber]?.players?.map(
+        player=>player.socketId===socket.id?{
+          ...player,
+          active:false
+        }:player
+      )
+
+      const playerDisconncted = rooms[playerRoomNumber]?.players?.find(
+        player=>player.socketId===socket.id
+      )
+      if(playerDisconncted){
+        timeoutIds[playerDisconncted.username] = setTimeout(()=>{
+          console.log('timeout hit')
+          rooms[playerRoomNumber].players = rooms[playerRoomNumber]?.players?.filter(
+            player=>player.socketId!==socket.id
+          )
+          io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
+        },disconnectTimeout)
+      }
+      console.log('a player disconnected',socket.id,rooms[playerRoomNumber]);
+      io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
     }
   });
 
@@ -80,11 +100,24 @@ io.on('connection', (socket) => {
 
     const existingPlayerIndex = rooms[data.room]?.players?.findIndex(player=>player.username===data?.username)
 
-    if(existingPlayerIndex!==-1 && typeof existingPlayerIndex === 'number'){
-      socket.emit('error',{
-        message:'player already exist'
-      })
-      console.log('player already exist in room')
+    if(
+      existingPlayerIndex!==-1 
+      && typeof existingPlayerIndex === 'number'
+    ){
+      if(!!rooms[data.room]?.players[existingPlayerIndex]?.active){
+        socket.emit('error',{
+          message:'player already exist and is active'
+        })
+        console.log('player already exist in room and is active')
+        return
+      }
+      //if rejoining a room
+      rooms[data.room].players[existingPlayerIndex].active = true
+      rooms[data.room].players[existingPlayerIndex].socketId = socket.id
+      clearTimeout(timeoutIds[rooms[data.room].players[existingPlayerIndex].username])
+      emitToPlayerRoom(io,socket,'all-players',rooms[data.room]?.players ?? [])
+      emitToPlayerRoom(io,socket,'deck',rooms[data.room]?.gameState?.deck ?? [])
+      emitToPlayerRoom(io,socket,'discard-pile',rooms[data.room]?.gameState?.discardPile ?? [])
       return
     }
 
@@ -98,6 +131,7 @@ io.on('connection', (socket) => {
 
     rooms[data.room]?.players.push({
       ...data,
+      active:true,
       socketId: socket.id,
       lose:false,
       cards:[]
