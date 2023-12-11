@@ -1,14 +1,15 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
-import { actionTypes, cardTypes } from "@/data"
-import { useState } from "react"
+import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
+import { useState, useMemo } from "react"
 import { addCardsToHand, removeCardsFromHand } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
-  const { deck,socket,discardPile} = useGameStateContext() || {}
+  const { deck,socket,discardPile,currentActions} = useGameStateContext() || {}
   const {players,currentPlayer}= usePlayerContext() || {}
+  const playerCards = players?.find(player=>player.username===currentPlayer?.username)?.cards
 
-  const playerCurrentHand = (playerUsername:string)=>{
+  const getPlayerCurrentHand = (playerUsername:string)=>{
     return players?.find(p=>p.username === playerUsername)?.cards ?? []
   }
 
@@ -29,7 +30,7 @@ export const useGameActions = ()=>{
     if(deck){
       const newCard = deck[deck.length-1]
       setPlayerHand(
-        [ ...playerCurrentHand(playerUsername),newCard]
+        [ ...getPlayerCurrentHand(playerUsername),newCard]
         ,playerUsername
       )
       const newDeck = deck.slice(0,deck.length-1)
@@ -67,17 +68,69 @@ export const useGameActions = ()=>{
     addToDiscard(discardedCards)
   }
 
+  const singleCardActionRequirements = {
+    [actionTypes.nope]:()=>(
+      ((currentActions?.length ?? 0)>0 
+      && currentActions?.[(currentActions?.length ?? 1)-1] !== actionTypes.exploding
+      && currentActions?.[(currentActions?.length ?? 1)-1] !== actionTypes.diffuse)
+      ?? false
+    ),
+    [actionTypes.diffuse]:()=>(
+      currentActions?.includes(actionTypes.exploding) ?? false
+    ),
+  }
+
+  const multiCardActionRequirements:{[key:number]:Function} = {
+    2:(selectedCards:Card[])=>(
+      selectedCards.length===2 && new Set(selectedCards.map(c=>c.type)).size === 1
+    ),
+    3:(selectedCards:Card[])=>(
+      selectedCards.length===3 && new Set(selectedCards.map(c=>c.type)).size === 1
+    ),
+  }
+
+  const isActionValidFromCards=(selectedCards:Card[])=>{
+    if(!selectedCards.length) return false
+
+    if(selectedCards.length===1){
+      const cardInActions = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
+      if(!cardInActions)return false
+
+      const singleCardActionType = Object.keys(singleCardActionRequirements)
+        .find(aType=>aType===selectedCards[0].type) as keyof typeof singleCardActionRequirements
+
+      if(singleCardActionType){
+        return singleCardActionRequirements[singleCardActionType]()
+      }
+    }
+
+    if(selectedCards.length>1){
+      if(multiCardActionRequirements[selectedCards.length]){
+        return multiCardActionRequirements[selectedCards.length](selectedCards)
+      }
+    }
+    return true
+  }
+
+  const validResponseCards = useMemo(()=>playerCards?.filter(card=>(
+    responseActionsTypes.includes(card.type as typeof responseActionsTypes[number])
+    && isActionValidFromCards([card])
+  )) ?? [],[playerCards?.length, isActionValidFromCards])
+
   const actions  = {
     drawCard,
     setPlayerHand,
-    playerCurrentHand,
-    discardCards
+    getPlayerCurrentHand,
+    discardCards,
+    isActionValidFromCards,
+    validResponseCards
   }
 
   return actions
 }
 
 
+//probably should seperate each impl into it's own file eventually
 export const useCardActions = ()=>{
   const { 
     deck,
@@ -86,10 +139,25 @@ export const useCardActions = ()=>{
     setCurrentActions,
     setActionPrompt,
     setAttackTurns,
-    setTurnCount} = useGameStateContext() || {}
+    setTurnCount
+  } = useGameStateContext() || {}
   const {players,currentPlayer} = usePlayerContext() || {}
   const [actionsComplete,setActionsComplete]=useState<number>(0)
   const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
+
+  //this needs to be added on each submitCallBack to trigger the next event
+  //or complete the event chain
+  const submitResponseEvent = (
+    showToUser:string,
+    customOptions:ActionPromptData["options"]={},
+    complete:boolean=false
+  )=>{
+    socket?.emit('next-action-response',{
+      showToUser,
+      ...(customOptions?{customOptions}:{}),
+      complete
+    })
+  }
   
   const nopeAction = () =>{
     console.log('activate nope')
@@ -106,27 +174,15 @@ export const useCardActions = ()=>{
     console.log('diffuse')
   }
 
-  //this needs to be added on each submitCallBack to trigger the next event
-  //or complete the event chain
-  const submitResponseEvent = (
-    showToUser:string,
-    customOptions:ActionPromptData["options"]={},
-    complete:boolean=false
-  )=>{
-    socket?.emit('next-action-response',{
-      showToUser,
-      ...(customOptions?{customOptions}:{}),
-      complete
-    })
-  }
-
   const favorAction = ()=>{
     if(setActionPrompt) {
       setActionPrompt([
           {
-            show:true,
+            text:'Choose a player to steal a card from',
             options:{
-              username:[...players?.map(p=>({
+              username:[...players
+              ?.filter(p=>p.username!==currentPlayer?.username)
+              ?.map(p=>({
                 value:p.username,
                 display:p.username
               }))??[]]
@@ -143,7 +199,7 @@ export const useCardActions = ()=>{
             }
           },
           {
-            show:true,
+            text:'Choose a card to give away',
             options:{},
             submitCallBack:(formData:FormData)=>{
               const cardType = formData.get('card')
@@ -172,7 +228,6 @@ export const useCardActions = ()=>{
     if(setActionPrompt) {
       setActionPrompt([
           {
-            show:true,
             text:`${deck?.slice(deck.length-3).map(
               c=>`${c.type} - ${c.id}`
             ).join()}`,
@@ -217,9 +272,10 @@ export const useCardActions = ()=>{
     [actionTypes.skip]:()=>null,
   }
 
+
   return {
     actions,
     actionsComplete,
-    setActionsComplete
+    setActionsComplete,
   }
 }

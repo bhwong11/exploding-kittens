@@ -93,6 +93,7 @@ export const actionTypes = {
   multiple3:'multiple-3',
  } as const
 
+ export const responseActionsTypes = [actionTypes.diffuse,actionTypes.nope] as const
 
  export const socketEvents = {
   newPageBackend:'new-page-backend'
