@@ -6,7 +6,7 @@ export const generateRoutes = (routesPathMap,app)=>{
 
 export const emitToPlayerRoom = (io,socket,event,emitData,customErrorMessage)=>{
   if(io || !socket || !event || !emitData){
-    console.log('missing data io, socket, event, data',[!io, !socket || !event || !emitData])
+    console.log('missing data io, socket, event, data',[!io, !socket, !event, !emitData])
   }
   const playerRoom = Array.from(socket.rooms)[1]
   if(!playerRoom){

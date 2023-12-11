@@ -1,10 +1,14 @@
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
-import { useState } from "react"
+import { useGameActions } from "@/lib/actions"
+import { useState, useEffect,lazy, Suspense } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
-import ResponseAction from "@/app/[roomNumber]/ResponseAction"
+
+const ResponseAction = lazy(()=>import("@/app/[roomNumber]/ResponseAction"))
+const ActionPrompt = lazy(()=>import("@/app/[roomNumber]/ActionPrompt"))
+
 
 type MultiCardActionsType = {
   [key: number]: Actions
@@ -15,23 +19,43 @@ const multiCardActions:MultiCardActionsType = {
   3:actionTypes.multiple3
 }
 
-export const Hand = ()=>{
+const Hand = ()=>{
   const {players,currentPlayer} =  usePlayerContext() || {}
   const {socket,turnCount} =  useGameStateContext() || {}
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
+  const [allowedResponseUsers,setAllowedResponseUsers] = useState<string[]>([])
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
-  const {attemptActivate} = useActivateResponseHandlers({initListeners:false})
-
+  const {attemptActivate} = useActivateResponseHandlers()
+  const {isActionValidFromCards,validResponseCards} = useGameActions()
 
   const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
-  const isSelectedCardsSameType = new Set(selectedCards.map(c=>c.type)).size === 1
+  useEffect(()=>{
+    setSelectedCards([])
+  },[turnCount])
+
+  //used to highlight cards on response action
+  useEffect(()=>{
+    if(!allowedResponseUsers.includes(currentPlayer?.username || '')) return
+    setSelectedCards(validResponseCards)
+  },[allowedResponseUsers])
+
+  useEffect(()=>{
+    if(!socket) return
+    socket?.on('activate-attempt',(data)=>{
+      setSelectedCards([])
+      setAllowedResponseUsers(data.newAllowedUsers)
+    })
+    socket?.on('no-response',()=>{
+      setSelectedCards([])
+    })
+    return ()=>{
+      socket?.disconnect();
+    }
+  },[socket])
 
   const disableActions = (
-    !selectedCards.length
-    || (!multiCardActions[selectedCards.length] && selectedCards.length>1)
-    || !isSelectedCardsSameType
-    || (!singleCardActionType && selectedCards.length===1)
+    !isActionValidFromCards(selectedCards)
     || !isPlayerTurn
   )
 
@@ -40,7 +64,6 @@ export const Hand = ()=>{
     const multiCardAction = multiCardActions[selectedCards.length]
     if(multiCardAction){
       attemptActivate(multiCardAction,selectedCards)
-      return
     }
 
     if(selectedCards.length===1 && singleCardActionType){
@@ -69,11 +92,11 @@ export const Hand = ()=>{
     <div className="flex flex-wrap">
       {currentCards?.map(card=>(
         <div
+          key={`card-${card.id}`}
           className={classNames(
             "hand-card border border-black w-[10rem] break-words",
             {"border-2 border-blue-500":selectedCards.find(c=>card.id===c.id)}
           )}
-          key={card?.id}
           onClick={()=>cardOnClickHandler(card)}
         >
           {JSON.stringify(card)}
@@ -89,8 +112,15 @@ export const Hand = ()=>{
       <button className="btn btn-blue" onClick={()=>endTurn()} disabled={isTurnEnd || !isPlayerTurn}>
         end turn
       </button>
-      <ResponseAction/>
+      {!!currentCards?.length && 
+        <Suspense fallback={null}>
+          <ResponseAction/>
+          <ActionPrompt/>
+        </Suspense>
+      }
     </div>
   </div>
   )
 }
+
+export default Hand

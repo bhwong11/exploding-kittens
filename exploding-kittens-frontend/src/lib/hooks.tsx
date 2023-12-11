@@ -1,4 +1,4 @@
-import { useEffect, useState} from "react"
+import { useEffect, useState, useTransition} from "react"
 import { io, Socket } from "socket.io-client"
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
@@ -25,6 +25,7 @@ export const usePlayerSocket=()=>{
     })
 
     return () => {
+      console.log('Client disconnected')
       socket?.disconnect();
     }
   },[])
@@ -65,7 +66,6 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
 
   const [showResponsePrompt, setShowResponsePrompt] = useState<boolean>(false)
   const [noResponses, setNoResponses] = useState<number>(0)
-  const [allowedResponse, setAllowedResponse] = useState<ResponseActions | null | "all">("all")
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
   const {actions,setActionsComplete,actionsComplete} = useCardActions()
@@ -87,7 +87,6 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
 
       //reset allowed users, responses, and hide response prompt
       setShowResponsePrompt(false)
-      setAllowedResponse("all")
       setAllowedUsers(
         players?.map(p=>p.username)
         .filter(username=>username===currentPlayer?.username) || []
@@ -106,10 +105,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     if(!socket?.id || !currentPlayer || !initListeners) return
     //if action is allow, add action to current action "chain"
     socket?.on('activate-attempt',(data)=>{
-      if(
-        !setCurrentActions
-        || ((data.allowedResponse!==data.action) && data.allowedResponse!=="all")
-      ) return
+      if(!setCurrentActions) return
 
       setCurrentActions(prev=>[...prev,data.action])
       setNoResponses(0)
@@ -122,7 +118,6 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       )
 
       //set response restrictions
-      setAllowedResponse(data.newAllowedResponse)
       setAllowedUsers(data.newAllowedUsers)
     })
 
@@ -131,6 +126,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     })
 
     return ()=>{
+      console.log('Client disconnected')
       socket?.disconnect();
     }
   },[socket?.id,currentPlayer?.username])
@@ -144,7 +140,6 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     cardType?:CardType
   )=>{
     //add card discard
-    let newAllowedResponse: ResponseActions | null | "all" = actionTypes.nope
     let newAllowedUsers: string[] = (
       players
       ?.map(p=>p.username)
@@ -152,20 +147,16 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     )
     
     if(action === actionTypes.exploding){
-      newAllowedResponse = actionTypes.diffuse
       newAllowedUsers = currentPlayer?.username?[currentPlayer.username]:[]
     }
     if(action === actionTypes.diffuse){
-      newAllowedResponse = null
       newAllowedUsers = []
     }
     discardCards(cards,cardId,cardType)
 
     socket?.emit('activate-attempt',{
       action,
-      newAllowedResponse,
       newAllowedUsers,
-      allowedResponse,
       allowedUsers
     })
   }
@@ -181,15 +172,15 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     //if this is set to true, display option for players to attemptActivate Nope
     showResponsePrompt,
     setShowResponsePrompt,
-    allowedResponse:allowedResponse,
     sendNoResponse,
     noResponses
   }
 }
 
 export const useInitGame = () => {
-  const {setDeck,socket,setDiscardPile} = useGameStateContext() || {}
+  const {setDeck,socket,setDiscardPile,deck,discardPile} = useGameStateContext() || {}
   const {players} = usePlayerContext() || {}
+  const [_,startTransition] = useTransition()
 
   const excludedCardTypes:CardType[] = [cardTypes.exploding.type,cardTypes.diffuse.type]
   const handSize = 5
@@ -197,7 +188,9 @@ export const useInitGame = () => {
   useEffect(()=>{
     if(!socket) return
     socket.on('deck',(data)=>{
-      if(setDeck)setDeck(data)
+      startTransition(()=>{
+        if(setDeck)setDeck(data)
+      })
     })
 
     socket.on('discard-pile',(data)=>{
@@ -205,9 +198,18 @@ export const useInitGame = () => {
     })
 
     return ()=>{
+      console.log('Client disconnected')
       socket?.disconnect();
     }
   },[socket])
+
+  useEffect(()=>{
+    if(!deck?.length && !!discardPile?.length){
+      const newDeck = shuffleArray(discardPile)
+      socket?.emit('deck',newDeck)
+      socket?.emit('discard-pile',[])
+    }
+  },[deck?.length])
 
   let cardsCreatedCount = 0
 
@@ -265,7 +267,7 @@ export const useInitGame = () => {
   const createDeck=()=>{
       const randomizedDeck = [
         ...initialDeck,
-        ...explodingKittenCards,
+        ...explodingKittenCards.slice(0,(players?.length ?? 1)-1),
         ...diffuseCards
       ].sort(() => Math.random() - 0.5)
       socket?.emit('deck',[...randomizedDeck,{

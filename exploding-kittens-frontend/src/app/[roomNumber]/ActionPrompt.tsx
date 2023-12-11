@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react"
+import React,{ useEffect, useState } from "react"
 import { useTurns } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext} from "@/context/players"
 
 
-export const ActionPrompt = ()=>{
+const ActionPrompt = ()=>{
   const {actionPrompt,socket,setActionPrompt} = useGameStateContext() || {}
   const {turnPlayer} = useTurns()
   const {currentPlayer} = usePlayerContext() || {}
@@ -17,7 +17,8 @@ export const ActionPrompt = ()=>{
   useEffect(()=>{
     setShowToUser(turnPlayer?.username ?? '')
   },[!!actionPrompt])
- 
+
+
   useEffect(()=>{
     if(!socket) return
     socket?.on('next-action-response',(data)=>{
@@ -34,30 +35,49 @@ export const ActionPrompt = ()=>{
   },[socket])
 
   return currentActionPrompt && showToUser===currentPlayer?.username && (
-    <form onSubmit={(e)=>{
-      e.preventDefault()
-      const formData = new FormData(e.currentTarget)
-      currentActionPrompt?.submitCallBack(formData)
-    }}>
-      <p className="action-prompt-text">{currentActionPrompt?.text}</p>
-      {Object.entries(currentActionPrompt?.options ?? {}).map(([name,options])=>(
-        <select key={`select-${name}`} name={name}>
-          {options?.map(option=>(
-            <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
+    <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+  
+    <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+      <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div className="flex flex-col items-center rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+        <form  className="flex flex-col w-fit" onSubmit={(e)=>{
+          e.preventDefault()
+          const formData = new FormData(e.currentTarget)
+          currentActionPrompt?.submitCallBack(formData)
+        }}>
+          <p className="action-prompt-text">{currentActionPrompt?.text}</p>
+          {Object.entries(currentActionPrompt?.options ?? {}).map(([name,options])=>(
+            <React.Fragment key={`options-${name}`}>
+              <label htmlFor={name}>{name}:</label>
+              <select id={name} name={name}>
+                {options?.map(option=>(
+                  <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
+                ))}
+              </select>
+            </React.Fragment>
           ))}
-        </select>
-      ))}
 
-      {Object.entries(customOptions ?? {}).map(([name,options])=>(
-        <select key={`select-${name}`} name={name}>
-          {options?.map(option=>(
-            <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
+          {Object.entries(customOptions ?? {}).map(([name,options])=>(
+            <React.Fragment key={`options-${name}`}>
+              <label htmlFor={name}>{name}:</label>
+              <select id={name} name={name}>
+                {options?.map(option=>(
+                  <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
+                ))}
+              </select>
+            </React.Fragment>
           ))}
-        </select>
-      ))}
 
-      <button type="submit" className="btn btn-blue">Submit/Confirm</button>
-    </form>
+          <button type="submit" className="btn btn-blue">Submit/Confirm</button>
+        </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   )
 
 }
+
+export default ActionPrompt

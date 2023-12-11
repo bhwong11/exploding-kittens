@@ -25,7 +25,6 @@ declare global{
     cards: Card[]
   }
   type ActionPromptData = {
-    show: boolean
     text?:string
     options:{
       [key:string]:{value:string,display:string}[]
@@ -37,9 +36,7 @@ declare global{
     ['new-page-backend']: (arg:{message:string}) => void
     ['activate-attempt']: (arg:{
       action:Actions,
-      newAllowedResponse: ResponseActions,
       newAllowedUsers: string[],
-      allowedResponse: ResponseActions,
       allowedUsers: string[]
     }) => void
     ['no-response']: () => void
@@ -64,9 +61,7 @@ declare global{
     ['all-players']: (arg:Player[]) => void
     ['activate-attempt']: (arg:{
       action:Actions | null,
-      newAllowedResponse: ResponseActions,
       newAllowedUsers: string[],
-      allowedResponse: ResponseActions,
       allowedUsers: string[]
     }) => void
     ['no-response']: () => void

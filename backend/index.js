@@ -137,8 +137,8 @@ io.on('connection', (socket) => {
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
       rooms[playerRoom].players = []
+      emitToPlayerRoom(io,socket,'all-players', rooms[playerRoom].players)
     }
-    emitToPlayerRoom(io,socket,'all-players', rooms[playerRoom].players)
   })
 
   socket.on('turn-count',(data)=>{
