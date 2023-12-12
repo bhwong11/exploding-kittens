@@ -97,8 +97,8 @@ export const useGameActions = ()=>{
       if(!cardInActions)return false
 
       const singleCardActionType = Object.keys(singleCardActionRequirements)
-        .find(aType=>aType===selectedCards[0].type) as keyof typeof singleCardActionRequirements
-
+      .find(aType=>aType===selectedCards[0].type) as keyof typeof singleCardActionRequirements
+      
       if(singleCardActionType){
         return singleCardActionRequirements[singleCardActionType]()
       }
@@ -111,6 +111,7 @@ export const useGameActions = ()=>{
     }
     return true
   }
+
 
   const validResponseCards = useMemo(()=>playerCards?.filter(card=>(
     responseActionsTypes.includes(card.type as typeof responseActionsTypes[number])

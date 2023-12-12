@@ -113,9 +113,9 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
 
       if(data.newAllowedUsers.includes(currentPlayer.username || '')){
         setShowResponsePrompt(true)
-      }else(
+      }else{
         setShowResponsePrompt(false)
-      )
+      }
 
       //set response restrictions
       setAllowedUsers(data.newAllowedUsers)
