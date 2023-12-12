@@ -7,6 +7,7 @@ import {
   usePlayerSocket 
 } from "@/lib/hooks"
 import Hand from "@/app/[roomNumber]/hand"
+import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 
 
 type RoomParams = {
@@ -66,7 +67,7 @@ const Room = ({params}:RoomParams)=>{
             clear players
         </button>
       </div>
-
+      <OtherPlayers/>
       <div className="border border-black">
         <Hand/>
         <div className="h-[15rem] overflow-y-scroll">

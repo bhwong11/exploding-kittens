@@ -21,6 +21,7 @@ declare global{
   type ResponseActions = Actions["nope"] | Actions["diffuse"]
   type Player = {
     username: string
+    active: boolean,
     lose: boolean
     cards: Card[]
   }
