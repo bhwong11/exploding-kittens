@@ -41,7 +41,8 @@ db.once('connected', () => {
 })
 
 const roomMax = 4
-const disconnectTimeout = 10000
+//set for 10 min
+const disconnectTimeout = 1000 * 60 * 10
 const timeoutIds = {}
 
 let rooms = {}
@@ -136,6 +137,7 @@ io.on('connection', (socket) => {
       lose:false,
       cards:[]
     })
+    console.log('ROOM!!',rooms[data.room]?.players)
     emitToPlayerRoom(io,socket,'all-players',rooms[data.room]?.players ?? [])
   })
 
