@@ -63,13 +63,13 @@ io.on('connection', (socket) => {
         player=>player.socketId===socket.id
       )
       if(playerDisconncted){
-        timeoutIds[playerDisconncted.username] = setTimeout(()=>{
+        timeoutIds[playerDisconncted.username] = setTimeout((allRooms)=>{
           console.log('timeout hit')
-          rooms[playerRoomNumber].players = rooms[playerRoomNumber]?.players?.filter(
+          allRooms[playerRoomNumber].players = allRooms[playerRoomNumber]?.players?.filter(
             player=>player.socketId!==socket.id
           )
-          io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
-        },disconnectTimeout)
+          io.sockets.emit('all-players',allRooms[playerRoomNumber].players ?? [])
+        },disconnectTimeout,rooms)
       }
       console.log('a player disconnected',socket.id,rooms[playerRoomNumber]);
       io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
