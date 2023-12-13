@@ -48,16 +48,27 @@ export const verifyToken = (token) => {
   }
 }
 
-export const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization']
-  const token = authHeader && authHeader.split(' ')[1]
-
-  if (!token) return res.sendStatus(401)
-
-  const result = verifyToken(token)
-
-  if (!result.success) return res.status(403).json({ error: result.error })
-
-  req.user = result.data
-  next()
+export const authenticate = (req, res, next) => {
+  const accessToken = req.headers['authorization']?.split(' ')[1]
+  const accessResult = verifyToken(accessToken)
+  try {
+    if (!accessToken || !accessResult.success) {
+      console.log('no valid access token')
+      const refreshToken = req?.cookies['refreshToken']
+      const refreshResult = verifyToken(refreshToken)
+      if (!refreshToken || !refreshResult.success) {
+        console.log('no valid refresh token')
+        return res.send({ error: 'invalid Refresh Token. Return to Login'})
+      } 
+      const { username, id } = req.body
+      console.log('assigning new access token')
+      req.headers['authorization'] = 'Bearer ' + generateToken({ username, id }, 'access')
+      console.log('assigning new refresh token')
+      req.cookies['refreshToken'] = generateToken({ username, id }, 'refresh')
+      return next()
+    }
+    next()
+  } catch (e) {
+    return console.error(e)
+  }
 }
