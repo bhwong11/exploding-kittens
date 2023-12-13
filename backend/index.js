@@ -1,38 +1,40 @@
-import express from 'express';
-import http from 'http';
-import { Server } from 'socket.io';
-import dotenv from 'dotenv';
-import db from './db/db.connection.js';
+import express from 'express'
+import http from 'http'
+import { Server } from 'socket.io'
+import dotenv from 'dotenv'
+import db from './db/db.connection.js'
 //seperate exports into routes/controller dir
-import routes from './routes/index.js';
-import { generateRoutes, emitToPlayerRoom } from './helpers/index.js';
+import routes from './routes/index.js'
+import { generateRoutes, emitToPlayerRoom } from './helpers/index.js'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 
-dotenv.config();
+dotenv.config()
 
-const app = express();
-const server = http.createServer(app);
-const port = 3000;
+const app = express()
+const server = http.createServer(app)
+const port = 3000
 const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
   }
-});
+})
 
-app.use(cors())
+app.use(cors({
+  credentials: true,
+  origin: true
+}))
 app.use(express.json())
+app.use(cookieParser())
 
 app.get('/', async (req, res) => {
   let collection = db.collection("posts");
   let results = await collection.find({})
     .limit(50)
-    // not sure .limit() works on .find() 
-    // I was getting an error so it'll be commented out for now
-    .toArray();
-  res.send(results).status(200);
-  // res.sendFile(__dirname + '/index.html');
-});
+    .toArray()
+  res.send(results).status(200)
+})
 
 generateRoutes(routes,app)
 
@@ -75,7 +77,7 @@ io.on('connection', (socket) => {
       console.log('a player disconnected',socket.id,rooms[playerRoomNumber]);
       io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
     }
-  });
+  })
 
   socket.on('new-player',(data)=>{
     console.log('new-player',data,rooms)
@@ -207,8 +209,8 @@ io.on('connection', (socket) => {
     console.log('next-action-response',data)
     emitToPlayerRoom(io,socket,'next-action-response', data)
   })
-});
+})
 
 server.listen(port, () => {
   console.log(`listening on port ${port}`)
-});
+})

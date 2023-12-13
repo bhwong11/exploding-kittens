@@ -17,6 +17,7 @@ const Login = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           username,
           password,
@@ -25,6 +26,7 @@ const Login = () => {
       .then(res => res.json())
       .then((data: User) => {
         if (setCurrentPlayer && data.username) {
+          console.log(data)
           setCurrentPlayer(data)
           router.push('/')
         }

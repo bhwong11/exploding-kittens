@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt'
 import User from '../models/User.js'
+import { generateToken } from '../helpers/index.js'
 
 const login = async (req, res) => {
   try {
@@ -19,13 +20,26 @@ const login = async (req, res) => {
     }
     
     const { username, rooms, wins, id, _id } = existingUser
-    return res.json({username, rooms, wins, id, _id}).status(200)
-    // need to set up error handling from back -> frontend
+
+    return res
+      .header('Authorization', generateToken(existingUser, 'access'))
+      .cookie('refreshToken', generateToken(existingUser, 'refresh'), { httpOnly: true })
+      .json({username, rooms, wins, id, _id})
+      .status(200)
+
   } catch (e) {
     res.json({ error: `error logging in ${e}`})
   }
 }
 
+const refresh = async (req, res) => {
+  console.log('succesful refresh')
+  console.log('access token:', req.headers['authorization'])
+  console.log('refresh token', req.cookies['refreshToken'])
+  return res.send({ refreshSuccess: true })
+}
+
 export default {
-  login
+  login,
+  refresh
 }
