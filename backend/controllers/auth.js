@@ -22,7 +22,7 @@ const login = async (req, res) => {
     const { username, rooms, wins, id, _id } = existingUser
 
     return res
-      .header('Authorization', generateToken(existingUser, 'access'))
+      .cookie('accessToken', generateToken(existingUser, 'access'), { httpOnly: true })
       .cookie('refreshToken', generateToken(existingUser, 'refresh'), { httpOnly: true })
       .json({username, rooms, wins, id, _id})
       .status(200)
@@ -34,8 +34,8 @@ const login = async (req, res) => {
 
 const refresh = async (req, res) => {
   console.log('succesful refresh')
-  console.log('access token:', req.headers['authorization'])
-  console.log('refresh token', req.cookies['refreshToken'])
+  console.log('access token:', req.cookies['accessToken'])
+  console.log('refresh token:', req.cookies['refreshToken'])
   return res.send({ refreshSuccess: true })
 }
 
