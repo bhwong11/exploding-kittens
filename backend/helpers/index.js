@@ -49,12 +49,12 @@ export const verifyToken = (token) => {
 }
 
 export const authenticate = (req, res, next) => {
-  const accessToken = req.headers['authorization']?.split(' ')[1]
+  const accessToken = req.cookies?.['accessToken']
   const accessResult = verifyToken(accessToken)
   try {
     if (!accessToken || !accessResult.success) {
       console.log('no valid access token')
-      const refreshToken = req?.cookies['refreshToken']
+      const refreshToken = req.cookies?.['refreshToken']
       const refreshResult = verifyToken(refreshToken)
       if (!refreshToken || !refreshResult.success) {
         console.log('no valid refresh token')
@@ -62,11 +62,12 @@ export const authenticate = (req, res, next) => {
       } 
       const { username, id } = req.body
       console.log('assigning new access token')
-      req.headers['authorization'] = 'Bearer ' + generateToken({ username, id }, 'access')
+      req.cookies['accessToken'] = generateToken({ username, id }, 'access')
       console.log('assigning new refresh token')
       req.cookies['refreshToken'] = generateToken({ username, id }, 'refresh')
       return next()
     }
+    console.log('success, valid access token')
     next()
   } catch (e) {
     return console.error(e)
