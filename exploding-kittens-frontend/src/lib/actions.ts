@@ -248,8 +248,7 @@ export const useCardActions = ()=>{
           },
           submitCallBack:(formData:FormData)=>{
             const playerSelectedUsername = formData?.get('username')?.toString()
-            console.log('CALLBACK',playerSelectedUsername)
-            const selectedPlayerIndex = players?.findIndex(p=>p.username==playerSelectedUsername)
+            const selectedPlayerIndex = players?.findIndex(p=>p.username==currentPlayer?.username)
             if(!selectedPlayerIndex && selectedPlayerIndex!==0){
               console.error('current player index not found')
               return
@@ -257,7 +256,6 @@ export const useCardActions = ()=>{
 
             const cardsShuffled = shuffleArray(players?.[selectedPlayerIndex].cards ?? [])
             const newCard = cardsShuffled[0]
-            console.log('NEW CARD',newCard)
             
             removeCardsFromHand(socket,[...(newCard?[newCard]:[])],playerSelectedUsername,players)
             addCardsToHand(socket,[...(newCard?[newCard]:[])],turnPlayer?.username,players)

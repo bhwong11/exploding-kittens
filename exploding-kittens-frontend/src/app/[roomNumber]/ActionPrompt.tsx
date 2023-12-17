@@ -66,8 +66,8 @@ const ActionPrompt = ()=>{
             <React.Fragment key={`options-${name}`}>
               <label htmlFor={name}>{name}:</label>
               <select id={name} name={name}>
-                {options?.map(option=>(
-                  <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
+                {options?.map((option,idx)=>(
+                  <option key={`option-${option.value}-${idx}`} value={option.value}>{option.display}</option>
                 ))}
               </select>
             </React.Fragment>
