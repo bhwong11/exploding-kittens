@@ -135,6 +135,7 @@ export const useGameActions = ()=>{
 export const useCardActions = ()=>{
   const { 
     deck,
+    discardPile,
     socket,
     turnCount,
     setCurrentActions,
@@ -178,6 +179,41 @@ export const useCardActions = ()=>{
     //only activate if turn player
     if(setCurrentActions) setCurrentActions(
       prev=>prev.filter(prev=>prev!==cardTypes.exploding.type)
+    )
+    if(!setActionPrompt) return 
+    setActionPrompt([
+        {
+          text:'choose a position to put the card back in. 0 is on top',
+          options:{
+            ['deck-placement']:(deck ?? []).map((_,index)=>({
+              value:index,
+              display:index
+            }))
+          },
+          submitCallBack:(formData:FormData)=>{
+            const deckPlacement = formData?.get('deck-placement')?.toString()
+            console.log('deck placement',deckPlacement, typeof deckPlacement)
+            if(!deckPlacement){
+              console.log('error: no deck placement found')
+              return
+            }
+            if(!deck){
+              console.log('error: deck not found')
+              return
+            }
+            const discardedExploding = discardPile?.find(card=>card.type===actionTypes.exploding)
+            if(!discardedExploding){
+              console.log('error: no exploding card found')
+              return
+            }
+            const newDeck = [...deck ?? []]
+            newDeck.splice(deck.length - parseInt(deckPlacement),0,discardedExploding)
+            socket?.emit('deck',newDeck)
+            socket?.emit('discard-pile',discardPile?.filter(c=>c.id!==discardedExploding.id) || [])
+            submitResponseEvent('',{},'',true)
+          }
+        },
+      ]
     )
     setActionsComplete(prev=>prev+1)
     console.log('diffuse')
@@ -315,26 +351,53 @@ export const useCardActions = ()=>{
 
   const seeTheFutureAction = ()=>{
     console.log('shuffle action')
-    if(setActionPrompt) {
-      setActionPrompt([
-          {
-            text:`${deck?.slice(deck.length-3).map(
-              c=>`${c.type} - ${c.id}`
-            ).join()}`,
-            options:{},
-            submitCallBack:()=>{
-              submitResponseEvent('',{},'',true)
-            }
-          },
-        ]
-      )
-    }
+    if(!setActionPrompt) return 
+    setActionPrompt([
+        {
+          text:`${deck?.slice(deck.length-3).map(
+            c=>`${c.type} - ${c.id}`
+          ).join()}`,
+          options:{},
+          submitCallBack:()=>{
+            submitResponseEvent('',{},'',true)
+          }
+        },
+      ]
+    )
   }
 
   const attackAction = ()=>{
     console.log('attack action')
     if(setAttackTurns)setAttackTurns(prev=>prev+1)
     if(setTurnCount)(setTurnCount(prev=>prev+1))
+  }
+
+  const explodingAction = ()=>{
+    if(!turnPlayer) return
+    const newPlayers = players?.map(player=>{
+      if(player.username===turnPlayer?.username){
+        return {
+          ...player,
+          lose:true
+        }
+      }
+      return player
+    })
+    socket?.emit('all-players',newPlayers ?? [])
+    console.log('exploding')
+    setActionsComplete(prev=>prev+1)
+  }
+
+  const shuffleAction = ()=>{
+    if(turnPlayer){
+      socket?.emit('deck',shuffleArray(deck ?? []))
+    }
+    console.log('shuffle')
+    setActionsComplete(prev=>prev+1)
+  }
+
+  const skip = ()=>{
+
   }
 
   type ActionImpl =  {
@@ -344,19 +407,13 @@ export const useCardActions = ()=>{
     //make this objects with an impl method
     [actionTypes.attack]:attackAction,
     [actionTypes.diffuse]:diffuseAction,
-    [actionTypes.exploding]:()=>{
-      console.log('exploding')
-      setActionsComplete(prev=>prev+1)
-    },
+    [actionTypes.exploding]:explodingAction,
     [actionTypes.favor]:favorAction,
     [actionTypes.multiple2]:multiple2Action,
     [actionTypes.multiple3]:multiple3Action,
     [actionTypes.nope]:nopeAction,
     [actionTypes.seeTheFuture]:seeTheFutureAction,
-    [actionTypes.shuffle]:()=>{
-      console.log('shuffle')
-      setActionsComplete(prev=>prev+1)
-    },
+    [actionTypes.shuffle]:()=>shuffleAction,
     [actionTypes.skip]:()=>null,
   }
 

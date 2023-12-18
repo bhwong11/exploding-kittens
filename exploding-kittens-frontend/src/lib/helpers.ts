@@ -48,3 +48,7 @@ export const addCardsToHand = (
 
   socket.emit('all-players',playersCopy)
 }
+
+export const getNonLostPlayers = (players:Player[])=>(
+  players.filter(p=>!p.lose)
+)

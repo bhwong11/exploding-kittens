@@ -265,11 +265,11 @@ export const useInitGame = () => {
   }
 
   const createDeck=()=>{
-      const randomizedDeck = [
+      const randomizedDeck = shuffleArray([
         ...initialDeck,
         ...explodingKittenCards.slice(0,(players?.length ?? 1)-1),
         ...diffuseCards
-      ].sort(() => Math.random() - 0.5)
+      ])
       socket?.emit('deck',[...randomizedDeck,{
         ...explodingKittenCards[0],
         id:1000
