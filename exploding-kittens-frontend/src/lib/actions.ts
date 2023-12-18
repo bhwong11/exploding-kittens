@@ -2,7 +2,7 @@ import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
 import { useState, useMemo } from "react"
-import { addCardsToHand, removeCardsFromHand } from "@/lib/helpers"
+import { addCardsToHand, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
   const { deck,socket,discardPile,currentActions} = useGameStateContext() || {}
@@ -144,20 +144,28 @@ export const useCardActions = ()=>{
   } = useGameStateContext() || {}
   const {players,currentPlayer} = usePlayerContext() || {}
   const [actionsComplete,setActionsComplete]=useState<number>(0)
-  const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
+
+  const nonLostPlayers = players?.filter(player=>!player.lose) ?? []
+  const turnPlayer = nonLostPlayers[(turnCount??0) % (players?.length ?? 1)]
 
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
   const submitResponseEvent = (
     showToUser:string,
     customOptions:ActionPromptData["options"]={},
+    customText:string='',
     complete:boolean=false
   )=>{
     socket?.emit('next-action-response',{
       showToUser,
       ...(customOptions?{customOptions}:{}),
+      ...(customText?{customText}:{}),
       complete
     })
+    if(complete && setActionPrompt) {
+      setActionPrompt(null)
+      setActionsComplete(prev=>prev+1)
+    }
   }
   
   const nopeAction = () =>{
@@ -176,52 +184,135 @@ export const useCardActions = ()=>{
   }
 
   const favorAction = ()=>{
-    if(setActionPrompt) {
-      setActionPrompt([
-          {
-            text:'Choose a player to steal a card from',
-            options:{
-              username:[...players
-              ?.filter(p=>p.username!==currentPlayer?.username)
-              ?.map(p=>({
-                value:p.username,
-                display:p.username
-              }))??[]]
-            },
-            submitCallBack:(formData:FormData)=>{
-              const playerSelected = formData?.get('username')?.toString()
-              const customCardsOption = {
-                card:players?.find(p=>p.username===playerSelected)?.cards?.map(c=>({
-                  value:c.type,
-                  display:`${c.type} - ${c.id}`
-                })) ?? []
-              }
-              submitResponseEvent(playerSelected || '',customCardsOption)
-            }
+    if(!setActionPrompt) return
+    setActionPrompt([
+        {
+          text:'Choose a player to steal a card from',
+          options:{
+            username:[...players
+            ?.filter(p=>p.username!==currentPlayer?.username)
+            ?.map(p=>({
+              value:p.username,
+              display:p.username
+            }))??[]]
           },
-          {
-            text:'Choose a card to give away',
-            options:{},
-            submitCallBack:(formData:FormData)=>{
-              const cardType = formData.get('card')
-
-              const currentPlayerIndex = players?.findIndex(p=>p.username==currentPlayer?.username) ?? 0
-
-              const newCard = players?.[currentPlayerIndex]
-                ?.cards
-                ?.find(c=>c.type===cardType)
-              
-              removeCardsFromHand(socket,[...(newCard?[newCard]:[])],currentPlayer?.username,players)
-              addCardsToHand(socket,[...(newCard?[newCard]:[])],turnPlayer?.username,players)
-
-              setActionPrompt(null)
-              submitResponseEvent('',{},true)
-              setActionsComplete(prev=>prev+1)
+          submitCallBack:(formData:FormData)=>{
+            const playerSelectedUsername = formData?.get('username')?.toString()
+            const customCardsOption = {
+              card:players?.find(p=>p.username===playerSelectedUsername)?.cards?.map(c=>({
+                value:c.type,
+                display:`${c.type} - ${c.id}`
+              })) ?? []
             }
+            submitResponseEvent(playerSelectedUsername || '',customCardsOption)
           }
-        ]
-      )
-    }
+        },
+        {
+          text:'Choose a card to give away',
+          options:{},
+          submitCallBack:(formData:FormData)=>{
+            const cardType = formData.get('card')
+
+            const currentPlayerIndex = players?.findIndex(p=>p.username==currentPlayer?.username)
+            if(!currentPlayerIndex && currentPlayerIndex!==0){
+              console.error('current player index not found')
+              return
+            }
+
+            const newCard = players?.[currentPlayerIndex]
+              ?.cards
+              ?.find(c=>c.type===cardType)
+            
+            removeCardsFromHand(socket,[...(newCard?[newCard]:[])],currentPlayer?.username,players)
+            addCardsToHand(socket,[...(newCard?[newCard]:[])],turnPlayer?.username,players)
+
+            submitResponseEvent('',{},'',true)
+          }
+        }
+      ]
+    )
+  }
+
+  const multiple2Action = ()=>{
+    if(!setActionPrompt) return
+    setActionPrompt([
+        {
+          text:'Choose a player to steal a card from',
+          options:{
+            username:[...players
+            ?.filter(p=>p.username!==currentPlayer?.username)
+            ?.map(p=>({
+              value:p.username,
+              display:p.username
+            }))??[]]
+          },
+          submitCallBack:(formData:FormData)=>{
+            const playerSelectedUsername = formData?.get('username')?.toString()
+            console.log('CALLBACK',playerSelectedUsername)
+            const selectedPlayerIndex = players?.findIndex(p=>p.username==playerSelectedUsername)
+            if(!selectedPlayerIndex && selectedPlayerIndex!==0){
+              console.error('current player index not found')
+              return
+            }
+
+            const cardsShuffled = shuffleArray(players?.[selectedPlayerIndex].cards ?? [])
+            const newCard = cardsShuffled[0]
+            console.log('NEW CARD',newCard)
+            
+            removeCardsFromHand(socket,[...(newCard?[newCard]:[])],playerSelectedUsername,players)
+            addCardsToHand(socket,[...(newCard?[newCard]:[])],turnPlayer?.username,players)
+            
+            submitResponseEvent('',{},'',true)
+          }
+        },
+      ]
+    )
+  }
+
+  const multiple3Action = ()=>{
+    if(!setActionPrompt) return
+    setActionPrompt([
+        {
+          text:'Choose a player to steal from and a card type',
+          options:{
+            username:[...players
+            ?.filter(p=>p.username!==currentPlayer?.username)
+            ?.map(p=>({
+              value:p.username,
+              display:p.username
+            }))??[]],
+            card:Object.values(cardTypes).map(card=>({
+              value:card.type,
+              display:card.type
+            }))
+          },
+          submitCallBack:(formData:FormData)=>{
+            const playerSelectedUsername = formData?.get('username')?.toString()
+            const cardTypeSelected = formData?.get('card')?.toString()
+            
+            const newCard = players?.find(p=>p.username === playerSelectedUsername)
+              ?.cards?.find(card=>card.type===cardTypeSelected)
+            
+            if(!newCard){
+              submitResponseEvent(turnPlayer.username,{})
+              return
+            }
+
+            removeCardsFromHand(socket,[...(newCard?[newCard]:[])],playerSelectedUsername,players)
+            addCardsToHand(socket,[...(newCard?[newCard]:[])],turnPlayer?.username,players)
+            
+            submitResponseEvent('',{},'',true)
+          }
+        },
+        {
+          text:'Card is Not Found',
+          options:{},
+          submitCallBack:()=>{
+            submitResponseEvent('',{},'',true)
+          }
+        }
+      ]
+    )
   }
 
   const seeTheFutureAction = ()=>{
@@ -234,9 +325,7 @@ export const useCardActions = ()=>{
             ).join()}`,
             options:{},
             submitCallBack:()=>{
-              setActionPrompt(null)
-              submitResponseEvent('',{},true)
-              setActionsComplete(prev=>prev+1)
+              submitResponseEvent('',{},'',true)
             }
           },
         ]
@@ -262,8 +351,8 @@ export const useCardActions = ()=>{
       setActionsComplete(prev=>prev+1)
     },
     [actionTypes.favor]:favorAction,
-    [actionTypes.multiple2]:()=>null,
-    [actionTypes.multiple3]:()=>null,
+    [actionTypes.multiple2]:multiple2Action,
+    [actionTypes.multiple3]:multiple3Action,
     [actionTypes.nope]:nopeAction,
     [actionTypes.seeTheFuture]:seeTheFutureAction,
     [actionTypes.shuffle]:()=>{

@@ -10,6 +10,7 @@ const ActionPrompt = ()=>{
   const {currentPlayer} = usePlayerContext() || {}
   const [responseCount,setResponseCount] = useState<number>(0)
   const [customOptions,setCustomOptions] = useState<ActionPromptData["options"]>({})
+  const [customText,setCustomText] = useState<string>('')
   const [showToUser, setShowToUser] = useState<string>('')
 
   const currentActionPrompt = actionPrompt?.[responseCount]
@@ -23,11 +24,13 @@ const ActionPrompt = ()=>{
     if(!socket) return
     socket?.on('next-action-response',(data)=>{
       if(data.customOptions)setCustomOptions(data.customOptions)
+      if(data.customText)setCustomText(data.customText)
       setShowToUser(data.showToUser)
       setResponseCount(prev=>prev+1)
       if(data.complete){
         setShowToUser('')
         setCustomOptions({})
+        setCustomText('')
         setResponseCount(0)
         if(setActionPrompt)setActionPrompt(null)
       }
@@ -47,6 +50,7 @@ const ActionPrompt = ()=>{
           currentActionPrompt?.submitCallBack(formData)
         }}>
           <p className="action-prompt-text">{currentActionPrompt?.text}</p>
+          <p className="action-prompt-text">{customText}</p>
           {Object.entries(currentActionPrompt?.options ?? {}).map(([name,options])=>(
             <React.Fragment key={`options-${name}`}>
               <label htmlFor={name}>{name}:</label>

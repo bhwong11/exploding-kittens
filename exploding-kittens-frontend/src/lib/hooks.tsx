@@ -344,7 +344,8 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
     }
   }
 
-  const turnPlayer = players?.[(turnCount??0) % (players?.length ?? 1)]
+  const nonLostPlayers = players?.filter(player=>!player.lose) ?? []
+  const turnPlayer = nonLostPlayers[(turnCount??0) % (players?.length ?? 1)]
 
   return {
     endTurn,

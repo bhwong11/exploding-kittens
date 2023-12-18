@@ -52,6 +52,7 @@ declare global{
     ['next-action-response']: (arg:{
       showToUser:string
       customOptions?:ActionPromptData["options"]
+      customText?:string
       complete:boolean
     }) => void
   }
@@ -74,6 +75,7 @@ declare global{
     ['next-action-response']: (arg:{
       showToUser:string
       customOptions?:ActionPromptData["options"]
+      customText?:string
       complete:boolean
     }) => void
   }
