@@ -2,7 +2,7 @@ import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
 import { useState, useMemo } from "react"
-import { addCardsToHand, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
+import { addCardsToHand, getNonLostPlayers, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
   const { deck,socket,discardPile,currentActions} = useGameStateContext() || {}
@@ -143,11 +143,12 @@ export const useCardActions = ()=>{
     setAttackTurns,
     setTurnCount
   } = useGameStateContext() || {}
-  const {players,currentPlayer} = usePlayerContext() || {}
+  const {players:allPlayers,currentPlayer} = usePlayerContext() || {}
   const [actionsComplete,setActionsComplete]=useState<number>(0)
+  const {discardCards} = useGameActions()
 
-  const nonLostPlayers = players?.filter(player=>!player.lose) ?? []
-  const turnPlayer = nonLostPlayers[(turnCount??0) % (players?.length ?? 1)]
+  const players = getNonLostPlayers(allPlayers ?? [])
+  const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
 
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
@@ -384,6 +385,7 @@ export const useCardActions = ()=>{
       return player
     })
     socket?.emit('all-players',newPlayers ?? [])
+    discardCards(turnPlayer?.cards ?? [])
     console.log('exploding')
     setActionsComplete(prev=>prev+1)
   }

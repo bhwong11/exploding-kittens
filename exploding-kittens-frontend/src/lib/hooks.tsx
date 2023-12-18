@@ -4,7 +4,7 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
-import { shuffleArray } from "@/lib/helpers"
+import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
 //show prompt hook
 
 export const usePlayerSocket=()=>{
@@ -61,7 +61,8 @@ type UseActivateResponseHandlersProps = {initListeners:boolean}
 export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHandlersProps={initListeners:false})=>{
 
   const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
-  const {players, currentPlayer} = usePlayerContext() || {}
+  const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
+  const players = getNonLostPlayers(allPlayers ?? [])
   const {discardCards} = useGameActions()
 
   const [showResponsePrompt, setShowResponsePrompt] = useState<boolean>(false)
@@ -79,7 +80,6 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       noResponses>=(allowedUsers?.length || 0) 
       && currentActions?.length
     ){
-      //remove the top action on stack, triggering useEffect again unitl all actions gone
       if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
 
       //implement action
@@ -276,14 +276,19 @@ export const useInitGame = () => {
       }])
   }
 
+  const emptyDiscard = ()=>{
+    socket?.emit('discard-pile',[])
+  }
+
   const createGameAssets = ()=>{
     if(!socket){
       console.error('socket not initialized')
       return
     }
-    //hands need to be created first to remove cards before r
+    //hands need to be created first to remove cards before
     createHands()
     createDeck()
+    emptyDiscard()
   }
 
   return {
@@ -301,7 +306,10 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
     setTurnCount,
     setAttackTurns
   } = useGameStateContext() || {}
-  const {currentPlayer,players} = usePlayerContext() ||{}
+  const {currentPlayer,players: allPlayers} = usePlayerContext() ||{}
+  const {deck} = useGameStateContext() || {}
+  const players = getNonLostPlayers(allPlayers ?? [])
+  const gameOver = players.length===1 && deck?.length
 
   const {attemptActivate,currentActions} = useActivateResponseHandlers()
   const {drawCard} = useGameActions()
@@ -344,12 +352,12 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
     }
   }
 
-  const nonLostPlayers = players?.filter(player=>!player.lose) ?? []
-  const turnPlayer = nonLostPlayers[(turnCount??0) % (players?.length ?? 1)]
+  const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
 
   return {
     endTurn,
     isTurnEnd,
-    turnPlayer
+    turnPlayer,
+    gameOver
   }
 }
