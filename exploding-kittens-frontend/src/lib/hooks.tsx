@@ -309,7 +309,12 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
   const {currentPlayer,players: allPlayers} = usePlayerContext() ||{}
   const {deck} = useGameStateContext() || {}
   const players = getNonLostPlayers(allPlayers ?? [])
-  const gameOver = players.length===1 && deck?.length
+  
+  //will be false if no winner
+  const winner: Player | boolean = players.length>1
+    && !!deck?.length
+    && players.filter(player=>!player.lose).length===1 
+    && (players?.find(player=>!player.lose) ?? false)
 
   const {attemptActivate,currentActions} = useActivateResponseHandlers()
   const {drawCard} = useGameActions()
@@ -358,6 +363,6 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
     endTurn,
     isTurnEnd,
     turnPlayer,
-    gameOver
+    winner
   }
 }

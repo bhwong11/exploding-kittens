@@ -20,7 +20,7 @@ type RoomParams = {
 const Room = ({params}:RoomParams)=>{
   const playerContext = usePlayerContext() || {}
   const {deck,discardPile} = useGameStateContext() || {}
-  useTurns() || {}
+  const {winner} = useTurns() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
@@ -40,6 +40,7 @@ const Room = ({params}:RoomParams)=>{
 
   return (
     <div className="w-full">
+      {winner && <div>Game Over! winner is: {winner.username}</div>}
       Room Number: {params.roomNumber}
       {JSON.stringify(playerContext)}
       {JSON.stringify(users)}
