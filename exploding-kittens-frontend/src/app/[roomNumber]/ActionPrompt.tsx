@@ -25,6 +25,7 @@ const ActionPrompt = ()=>{
     socket?.on('next-action-response',(data)=>{
       if(data.customOptions)setCustomOptions(data.customOptions)
       if(data.customText)setCustomText(data.customText)
+      //setCustomResponse
       setShowToUser(data.showToUser)
       setResponseCount(prev=>prev+1)
       if(data.complete){
