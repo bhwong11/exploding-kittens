@@ -1,44 +1,31 @@
 import React,{ useEffect, useState } from "react"
-import { useTurns } from "@/lib/hooks"
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext} from "@/context/players"
 
 
 const ActionPrompt = ()=>{
   const {actionPrompt,socket,setActionPrompt} = useGameStateContext() || {}
-  const {turnPlayer} = useTurns()
   const {currentPlayer} = usePlayerContext() || {}
   const [responseCount,setResponseCount] = useState<number>(0)
-  const [customOptions,setCustomOptions] = useState<ActionPromptData["options"]>({})
-  const [customText,setCustomText] = useState<string>('')
-  const [showToUser, setShowToUser] = useState<string>('')
+  const [previousSubmitData,setPreviousSubmitData] = useState<{[key:string]:any}>({})
 
-  const currentActionPrompt = actionPrompt?.[responseCount]
-
-  useEffect(()=>{
-    setShowToUser(turnPlayer?.username ?? '')
-  },[!!actionPrompt])
+  const currentActionPrompt = actionPrompt?.[responseCount]?.(previousSubmitData)
 
 
   useEffect(()=>{
     if(!socket) return
     socket?.on('next-action-response',(data)=>{
-      if(data.customOptions)setCustomOptions(data.customOptions)
-      if(data.customText)setCustomText(data.customText)
-      //setCustomResponse
-      setShowToUser(data.showToUser)
+      if(data.formObject)setPreviousSubmitData(data.formObject)
       setResponseCount(prev=>prev+1)
       if(data.complete){
-        setShowToUser('')
-        setCustomOptions({})
-        setCustomText('')
         setResponseCount(0)
+        setPreviousSubmitData({})
         if(setActionPrompt)setActionPrompt(null)
       }
     })
   },[socket])
 
-  return currentActionPrompt && showToUser===currentPlayer?.username && (
+  return currentActionPrompt && currentActionPrompt?.showToUser===currentPlayer?.username && (
     <div className="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
   
@@ -51,24 +38,12 @@ const ActionPrompt = ()=>{
           currentActionPrompt?.submitCallBack(formData)
         }}>
           <p className="action-prompt-text">{currentActionPrompt?.text}</p>
-          <p className="action-prompt-text">{customText}</p>
-          {Object.entries(currentActionPrompt?.options ?? {}).map(([name,options])=>(
-            <React.Fragment key={`options-${name}`}>
+          {Object.entries(currentActionPrompt?.options ?? {}).map(([name,options],idx)=>(
+            <React.Fragment key={`options-${name}-${idx}`}>
               <label htmlFor={name}>{name}:</label>
               <select id={name} name={name}>
                 {options?.map(option=>(
                   <option key={`option-${option.value}`} value={option.value}>{option.display}</option>
-                ))}
-              </select>
-            </React.Fragment>
-          ))}
-
-          {Object.entries(customOptions ?? {}).map(([name,options])=>(
-            <React.Fragment key={`options-${name}`}>
-              <label htmlFor={name}>{name}:</label>
-              <select id={name} name={name}>
-                {options?.map((option,idx)=>(
-                  <option key={`option-${option.value}-${idx}`} value={option.value}>{option.display}</option>
                 ))}
               </select>
             </React.Fragment>

@@ -26,6 +26,7 @@ declare global{
     cards: Card[]
   }
   type ActionPromptData = {
+    showToUser?:string
     text?:string
     options:{
       [key:string]:{value:string | number,display:string | number}[]
@@ -50,9 +51,7 @@ declare global{
     ['turn-count']: (arg:number) => void
     ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
-      showToUser:string
-      customOptions?:ActionPromptData["options"]
-      customText?:string
+      formObject:{[key:string]:any}
       complete:boolean
     }) => void
   }
@@ -73,9 +72,7 @@ declare global{
     ['turn-count']: (arg:number) => void
     ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
-      showToUser:string
-      customOptions?:ActionPromptData["options"]
-      customText?:string
+      formObject:{[key:string]:any}
       complete:boolean
     }) => void
   }

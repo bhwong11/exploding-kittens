@@ -4,7 +4,8 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import {
   useInitGame,
-  usePlayerSocket 
+  usePlayerSocket ,
+  useTurns
 } from "@/lib/hooks"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
@@ -17,8 +18,9 @@ type RoomParams = {
 }
 
 const Room = ({params}:RoomParams)=>{
-  const playerContext = usePlayerContext()
+  const playerContext = usePlayerContext() || {}
   const {deck,discardPile} = useGameStateContext() || {}
+  useTurns() || {}
 
   const [users,setUsers] = useState<User | null>(null)
   const [username,setUsername] = useState<string>("")
