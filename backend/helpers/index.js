@@ -68,6 +68,7 @@ export const authenticate = (req, res, next) => {
       return next()
     }
     console.log('success, valid access token')
+    req.user = accessResult.data
     next()
   } catch (e) {
     return console.error(e)
