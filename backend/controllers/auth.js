@@ -36,7 +36,7 @@ const refresh = async (req, res) => {
   console.log('succesful refresh')
   console.log('access token:', req.cookies['accessToken'])
   console.log('refresh token:', req.cookies['refreshToken'])
-  return res.send({ refreshSuccess: true })
+  return res.send(req.user)
 }
 
 export default {

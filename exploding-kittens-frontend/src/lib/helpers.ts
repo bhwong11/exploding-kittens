@@ -52,3 +52,18 @@ export const addCardsToHand = (
 export const getNonLostPlayers = (players:Player[])=>(
   players.filter(p=>!p.lose)
 )
+
+export const authenticate = async () => {
+  return await fetch('http://localhost:3000/auth/refresh', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include'
+  })
+  .then(res => res.json())
+  .then((user: User) => {
+    console.log('user:', user)
+    return user
+  })
+}
