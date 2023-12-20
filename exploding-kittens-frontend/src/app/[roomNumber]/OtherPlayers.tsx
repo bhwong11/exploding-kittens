@@ -7,7 +7,7 @@ const OtherPlayers = ()=>{
     <div>
       Other Players
       {players?.map(player=>(
-        <div className="border border-black">
+        <div className="border border-black" key={player.username}>
           <div className="flex items-center">
           {player.username}:&nbsp;
           {player?.active?

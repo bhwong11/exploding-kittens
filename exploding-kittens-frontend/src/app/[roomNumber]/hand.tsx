@@ -2,7 +2,7 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
 import { useGameActions } from "@/lib/actions"
-import { useState, useEffect,lazy, Suspense } from "react"
+import { useState, useEffect,lazy, Suspense,memo } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
 
@@ -21,7 +21,7 @@ const multiCardActions:MultiCardActionsType = {
 
 const Hand = ()=>{
   const {players,currentPlayer} =  usePlayerContext() || {}
-  const {socket,turnCount} =  useGameStateContext() || {}
+  const {socket,turnCount,attackTurns} =  useGameStateContext() || {}
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
   const [allowedResponseUsers,setAllowedResponseUsers] = useState<string[]>([])
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
@@ -105,6 +105,7 @@ const Hand = ()=>{
     </div>
     <div className="border border-black">
       <p>turn count: {turnCount}</p>
+      <p>attack: {attackTurns}</p>
       <p>turn player: {turnPlayer?.username}</p>
       <button className="btn btn-blue" onClick={cardActivateHandler} disabled={disableActions}>
         activate card(s)
@@ -123,4 +124,4 @@ const Hand = ()=>{
   )
 }
 
-export default Hand
+export default memo(Hand)

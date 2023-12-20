@@ -7,12 +7,12 @@ type GameStateContextValues ={
   discardPile: Card[],
   turnCount: number,
   currentActions:Actions[],
-  actionPrompt: ActionPromptData[] | null,
+  actionPrompt: ((previousAnswerObject?:{[key:string]: any})=>ActionPromptData)[] | null,
   attackTurns: number,
   socket:Socket<ServerToClientEvents, ClientToServerEvents> | null,
   setSocket: React.Dispatch<React.SetStateAction<Socket<ServerToClientEvents, ClientToServerEvents> | null>>,
   setAttackTurns: React.Dispatch<React.SetStateAction<number>>
-  setActionPrompt: React.Dispatch<React.SetStateAction<ActionPromptData[] | null>>
+  setActionPrompt: React.Dispatch<React.SetStateAction<((previousAnswerObject?:{[key:string]: any})=>ActionPromptData)[] | null>>
   setDeck: React.Dispatch<React.SetStateAction<Card[]>>
   setDiscardPile: React.Dispatch<React.SetStateAction<Card[]>>
   setTurnCount: React.Dispatch<React.SetStateAction<number>>
@@ -28,7 +28,7 @@ export const GameStateContextProvider = ({children}:{
   const [discardPile, setDiscardPile]= useState<Card[]>([])
   const [turnCount, setTurnCount]= useState<number>(0)
   const [currentActions, setCurrentActions]= useState<Actions[]>([])
-  const [actionPrompt, setActionPrompt]= useState<ActionPromptData[] | null>(null)
+  const [actionPrompt, setActionPrompt]= useState<((previousAnswerObject?:{[key:string]: any})=>ActionPromptData)[] | null>(null)
   const [attackTurns, setAttackTurns]= useState<number>(0)
   const [socket, setSocket]= useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null)
 
