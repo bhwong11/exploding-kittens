@@ -1,12 +1,13 @@
 import { usePlayerContext } from "@/context/players";
 
 const OtherPlayers = ()=>{
-  const {players} = usePlayerContext() || {}
-
+  const {players, currentPlayer} = usePlayerContext() || {}
   return(
     <div>
       Other Players
-      {players?.map(player=>(
+      {players
+        ?.filter((player: Player) => player.username !== currentPlayer?.username)
+        .map(player=>(
         <div className="border border-black" key={player.username}>
           <div className="flex items-center">
           {player.username}:&nbsp;
