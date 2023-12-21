@@ -1,5 +1,6 @@
 "use client"
 import {useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import {
@@ -7,6 +8,7 @@ import {
   usePlayerSocket ,
   useTurns
 } from "@/lib/hooks"
+import { authenticate } from "@/lib/helpers"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 
@@ -18,7 +20,8 @@ type RoomParams = {
 }
 
 const Room = ({params}:RoomParams)=>{
-  const playerContext = usePlayerContext() || {}
+  const router = useRouter()
+  const {players,currentPlayer,setCurrentPlayer} = usePlayerContext() || {}
   const {deck,discardPile} = useGameStateContext() || {}
   const {winner} = useTurns() || {}
 
@@ -38,11 +41,22 @@ const Room = ({params}:RoomParams)=>{
       })
   },[])
 
+  useEffect(() => {
+    const setData = async () => {
+      const playerData = await authenticate()
+      if (playerData && setCurrentPlayer) setCurrentPlayer(playerData)
+      else router.push('/auth/login')
+    }
+    if (!currentPlayer) {
+      setData()
+    }
+  }, [])
+
   return (
     <div className="w-full">
       {winner && <div>Game Over! winner is: {winner.username}</div>}
       Room Number: {params.roomNumber}
-      {JSON.stringify(playerContext)}
+      {JSON.stringify(players)}
       {JSON.stringify(users)}
       <div className="border border-black">
         <h1>join room</h1>

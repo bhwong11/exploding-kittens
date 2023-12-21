@@ -44,7 +44,7 @@ export const usePlayerSocket=()=>{
         username,
         ...(room?{room}:{})
       })
-      if(setCurrentPlayer) setCurrentPlayer({...currentPlayer,username})
+      // if(setCurrentPlayer) setCurrentPlayer({...currentPlayer,username})
     }else{
       console.error('socket not initialized yet')
     }
