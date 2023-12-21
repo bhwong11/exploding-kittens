@@ -55,8 +55,8 @@ const Room = ({params}:RoomParams)=>{
   return (
     <div className="w-full">
       {winner && <div>Game Over! winner is: {winner.username}</div>}
-      Room Number: {params.roomNumber}
-      {JSON.stringify(players)}
+      Room Number: {params.roomNumber} <br/>
+      {JSON.stringify(players)} <br/>
       {JSON.stringify(users)}
       <div className="border border-black">
         <h1>join room</h1>
@@ -93,8 +93,12 @@ const Room = ({params}:RoomParams)=>{
           Discard:
           {JSON.stringify(discardPile)}
         </div>
-        <button onClick={createGameAssets} className="btn btn-blue">
-            create game assets(need at least one joined user for this to work)
+        <button 
+          onClick={createGameAssets} 
+          className="btn btn-blue" 
+          disabled={players && players.length < 3}
+        >
+          create game assets(need at least one joined user for this to work)
         </button>
       </div>
     </div>
