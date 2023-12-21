@@ -22,6 +22,7 @@ type RoomParams = {
 const Room = ({params}:RoomParams)=>{
   const router = useRouter()
   const {players,currentPlayer,setCurrentPlayer} = usePlayerContext() || {}
+
   const {deck,discardPile} = useGameStateContext() || {}
   const {winner} = useTurns() || {}
 
