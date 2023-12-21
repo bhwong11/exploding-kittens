@@ -38,13 +38,23 @@ export const usePlayerSocket=()=>{
     currentSocket?.emit('clear-players')
   }
 
-  const joinRoom = (username:string, room?:string):void =>{
+  type JoinRoomProps = {
+    username?:string, room?:string
+  }
+  const joinRoom = ({username, room}:JoinRoomProps):void =>{
+    if(!username && !currentPlayer?.username) {
+      console.error('no username or current username found')
+      return
+    }
     if(currentSocket){
       currentSocket.emit('new-player',{
-        username,
+        username: username ?? currentPlayer?.username ?? '',
         ...(room?{room}:{})
       })
-      // if(setCurrentPlayer) setCurrentPlayer({...currentPlayer,username})
+      if(setCurrentPlayer) setCurrentPlayer({
+        ...currentPlayer,
+        ...(username?{username}:{})
+      })
     }else{
       console.error('socket not initialized yet')
     }
@@ -65,8 +75,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
   const players = getNonLostPlayers(allPlayers ?? [])
   const {discardCards} = useGameActions()
 
-  const [showResponsePrompt, setShowResponsePrompt] = useState<boolean>(false)
-  const [noResponses, setNoResponses] = useState<number>(0)
+  const [noResponses, setNoResponses] = useState<{username:string}[]>([])
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
   const {actions,setActionsComplete,actionsComplete} = useCardActions()
@@ -77,7 +86,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     //if all players that can respond respond with no response, implement all actions in "chain"
     if(!initListeners) return
     if(
-      noResponses>=(allowedUsers?.length || 0) 
+      noResponses.length>=(allowedUsers?.length || 0) 
       && currentActions?.length
     ){
       if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
@@ -86,18 +95,13 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       actions[currentActions[currentActions.length-1]]()
 
       //reset allowed users, responses, and hide response prompt
-      setShowResponsePrompt(false)
-      setAllowedUsers(
-        players?.map(p=>p.username)
-        .filter(username=>username===currentPlayer?.username) || []
-      )
+      setAllowedUsers([])
     }
     
     if(!currentActions?.length){
-      setNoResponses(0)
+      setNoResponses([])
       setActionsComplete(0)
     }
-    //shouldn't listen for global state data
   },[noResponses,actionsComplete,allowedUsers?.length])
 
 
@@ -108,21 +112,14 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       if(!setCurrentActions) return
 
       setCurrentActions(prev=>[...prev,data.action])
-      setNoResponses(0)
+      setNoResponses([])
       //useEffect on action hook that sets a context var that it's complete
-
-      if(data.newAllowedUsers.includes(currentPlayer.username || '')){
-        setShowResponsePrompt(true)
-      }else{
-        setShowResponsePrompt(false)
-      }
-
       //set response restrictions
       setAllowedUsers(data.newAllowedUsers)
     })
 
-    socket?.on('no-response',()=>{
-      setNoResponses(prev=>prev+1)
+    socket?.on('no-response',(data)=>{
+      setNoResponses(prev=>[...prev,{username:data.username}])
     })
 
     return ()=>{
@@ -146,6 +143,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       .filter(username=>username!==currentPlayer?.username) || []
     )
     
+    //add to gameActions hooks
     if(action === actionTypes.exploding){
       newAllowedUsers = currentPlayer?.username?[currentPlayer.username]:[]
     }
@@ -162,16 +160,20 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
   }
 
   //send no response if no card to respond to current action
-  const sendNoResponse = ()=>{
-    socket?.emit('no-response')
+  const sendNoResponse = (username?:string)=>{
+    if(!username) {
+      console.error('username not found in send response')
+      return
+    }
+    socket?.emit('no-response',{
+      username
+    })
   }
 
   return {
     attemptActivate,
     currentActions,
-    //if this is set to true, display option for players to attemptActivate Nope
-    showResponsePrompt,
-    setShowResponsePrompt,
+    allowedUsers,
     sendNoResponse,
     noResponses
   }
@@ -244,6 +246,7 @@ export const useInitGame = () => {
   )
 
   const createHands = ()=>{
+    const newPlayers = [...(players??[])]
     for (let player of players || []){
       const hand:Card[] = []
       const diffuseCard:Card | undefined = diffuseCards.pop()
@@ -255,13 +258,14 @@ export const useInitGame = () => {
         if(newCard) hand.push(newCard)
       }
 
-      const newPlayers = [...(players??[])]
+      //const newPlayers = [...(players??[])]
       const currPlayerIndx = players?.findIndex(p=>p.username === player.username)
       if((currPlayerIndx || currPlayerIndx===0) && currPlayerIndx!==-1){
         newPlayers[currPlayerIndx].cards = hand
       }
-      socket?.emit('all-players',newPlayers)
     }
+    console.log('NEW PLAYER',newPlayers)
+    socket?.emit('all-players',newPlayers)
   }
 
   const createDeck=()=>{

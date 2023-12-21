@@ -41,10 +41,8 @@ declare global{
       newAllowedUsers: string[],
       allowedUsers: string[]
     }) => void
-    ['no-response']: () => void
-    ['new-player']: (arg:{
-      username:string
-    }) => void
+    ['no-response']: (arg:{username:string}) => void
+    ['new-player']: (arg:{username:string}) => void
     ['all-players']: (arg:Player[]) => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:{message:string}) => void
@@ -65,7 +63,7 @@ declare global{
       newAllowedUsers: string[],
       allowedUsers: string[]
     }) => void
-    ['no-response']: () => void
+    ['no-response']: (arg:{username:string}) => void
     ['clear-players']: () => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:string) => void

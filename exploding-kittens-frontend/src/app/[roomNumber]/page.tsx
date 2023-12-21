@@ -42,16 +42,16 @@ const Room = ({params}:RoomParams)=>{
       })
   },[])
 
-  useEffect(() => {
-    const setData = async () => {
-      const playerData = await authenticate()
-      if (playerData && setCurrentPlayer) setCurrentPlayer(playerData)
-      else router.push('/auth/login')
-    }
-    if (!currentPlayer) {
-      setData()
-    }
-  }, [])
+  // useEffect(() => {
+  //   const setData = async () => {
+  //     const playerData = await authenticate()
+  //     if (playerData && setCurrentPlayer) setCurrentPlayer(playerData)
+  //     else router.push('/auth/login')
+  //   }
+  //   if (!currentPlayer) {
+  //     setData()
+  //   }
+  // }, [])
 
   return (
     <div className="w-full">
@@ -63,7 +63,7 @@ const Room = ({params}:RoomParams)=>{
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
           e.preventDefault()
-          joinRoom(username,params.roomNumber)
+          joinRoom({username,room:params.roomNumber })
           setUsername("")
         }}>
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">

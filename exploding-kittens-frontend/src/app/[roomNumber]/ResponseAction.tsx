@@ -5,14 +5,17 @@ import {
 import { useGameActions } from "@/lib/actions"
 import { actionTypes } from "@/data"
 import { useGameStateContext } from "@/context/gameState"
+import { usePlayerContext } from "@/context/players"
 
 const ResponseAction = ()=>{
   const {validResponseCards} =  useGameActions()
   const {currentActions} =  useGameStateContext() || {}
+  const {currentPlayer} = usePlayerContext() || {}
 
   const {
     attemptActivate,
-    showResponsePrompt,
+    allowedUsers,
+    noResponses,
     sendNoResponse,
   } = useActivateResponseHandlers({initListeners:true})
 
@@ -23,10 +26,17 @@ const ResponseAction = ()=>{
   }
   const lastAction = currentActions?.[(currentActions?.length ?? 0)-1]
 
+  const showPrompt = !noResponses.map(user=>user.username).includes(currentPlayer?.username ?? '')
+    && allowedUsers.includes(currentPlayer?.username ?? '')
+    //&& !(noResponses.length>=(allowedUsers?.length || 0) )
+
 
   return (
       <div className="w-full">
-        {showResponsePrompt && (
+        <div>actions:{JSON.stringify(currentActions)}</div>
+        <div>no responses:{JSON.stringify(noResponses)}</div>
+        <div>allowed:{JSON.stringify(allowedUsers)}</div>
+        {showPrompt && (
           <div className="bg-pink-300">
           {validResponseCards.length?(
           <>
@@ -48,7 +58,7 @@ const ResponseAction = ()=>{
               )}
             </div>
             <div>
-              <button className="btn btn-blue" onClick={()=>sendNoResponse()}>
+              <button className="btn btn-blue" onClick={()=>sendNoResponse(currentPlayer?.username)}>
                 no response
               </button>
             </div>

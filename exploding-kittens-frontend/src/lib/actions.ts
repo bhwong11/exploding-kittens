@@ -266,7 +266,7 @@ export const useCardActions = ()=>{
         },
         submitCallBack:(formData:FormData)=>{
           const playerSelectedUsername = formData?.get('username')?.toString()
-          const selectedPlayerIndex = players?.findIndex(p=>p.username==currentPlayer?.username)
+          const selectedPlayerIndex = players?.findIndex(p=>p.username==playerSelectedUsername)
           if(!selectedPlayerIndex && selectedPlayerIndex!==0){
             console.error('current player index not found')
             return

@@ -94,9 +94,15 @@ io.on('connection', (socket) => {
       rooms[data.room] = {
         players:[],
         gameState:{
-          turnCount:0,
           deck:[],
-          discardPile:[]
+          discardPile:[],
+          turnCount:0,
+          //current action data
+          currentActions:[],
+          //action prompt Data
+          actionPromptType:'',
+          actionPromptIndex:0,
+          attackTurns:0,
         }
       }
     }
@@ -139,7 +145,6 @@ io.on('connection', (socket) => {
       lose:false,
       cards:[]
     })
-    console.log('ROOM!!',rooms[data.room]?.players)
     emitToPlayerRoom(io,socket,'all-players',rooms[data.room]?.players ?? [])
   })
 
@@ -200,9 +205,9 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('no-response',()=>{
+  socket.on('no-response',(data)=>{
     console.log('no-response')
-    emitToPlayerRoom(io,socket,'no-response')
+    emitToPlayerRoom(io,socket,'no-response',data)
   })
 
   socket.on('next-action-response',(data)=>{
