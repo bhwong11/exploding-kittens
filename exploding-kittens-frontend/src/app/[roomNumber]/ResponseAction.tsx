@@ -28,7 +28,6 @@ const ResponseAction = ()=>{
 
   const showPrompt = !noResponses.map(user=>user.username).includes(currentPlayer?.username ?? '')
     && allowedUsers.includes(currentPlayer?.username ?? '')
-    //&& !(noResponses.length>=(allowedUsers?.length || 0) )
 
 
   return (

@@ -99,6 +99,8 @@ io.on('connection', (socket) => {
           turnCount:0,
           //current action data
           currentActions:[],
+          noResponses:[],
+          allowedUsers:[],
           //action prompt Data
           actionPromptType:'',
           actionPromptIndex:0,
@@ -195,6 +197,11 @@ io.on('connection', (socket) => {
 
   socket.on('activate-attempt',(data)=>{
     console.log('activate-attempt',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.allowedUsers = data.newAllowedUsers
+      rooms[playerRoom].gameState.currentActions = [...rooms[playerRoom].gameState.currentActions,data.action]
+    }
     emitToPlayerRoom(io,socket,'activate-attempt', data)
   })
 
@@ -207,6 +214,9 @@ io.on('connection', (socket) => {
 
   socket.on('no-response',(data)=>{
     console.log('no-response')
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.noResponses = [...rooms[playerRoom].gameState.noResponses,data.noResponses]
+    }
     emitToPlayerRoom(io,socket,'no-response',data)
   })
 
