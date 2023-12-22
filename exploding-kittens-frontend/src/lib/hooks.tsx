@@ -84,6 +84,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
   useEffect(()=>{
     //if all players that can respond respond with no response, implement all actions in "chain"
+    console.log('ACTIONS',actionsComplete) //it's always 0?
     if(!initListeners) return
     if(
       noResponses.length>=(allowedUsers?.length || 0) 
@@ -96,13 +97,15 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
 
       //reset allowed users, responses, and hide response prompt
       setAllowedUsers([])
+      socket?.emit('clear-allowed-users')
     }
     
     if(!currentActions?.length){
       setNoResponses([])
+      socket?.emit('clear-no-response')
       setActionsComplete(0)
     }
-  },[noResponses,actionsComplete,allowedUsers?.length])
+  },[noResponses?.length,actionsComplete,allowedUsers?.length])
 
 
   useEffect(()=>{
@@ -120,6 +123,14 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
 
     socket?.on('no-response',(data)=>{
       setNoResponses(prev=>[...prev,{username:data.username}])
+    })
+
+    socket?.on('clear-no-response',()=>{
+      setNoResponses([])
+    })
+
+    socket?.on('clear-allowed-users',()=>{
+      setAllowedUsers([])
     })
 
     return ()=>{
@@ -154,8 +165,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
 
     socket?.emit('activate-attempt',{
       action,
-      newAllowedUsers,
-      allowedUsers
+      newAllowedUsers
     })
   }
 

@@ -39,9 +39,10 @@ declare global{
     ['activate-attempt']: (arg:{
       action:Actions,
       newAllowedUsers: string[],
-      allowedUsers: string[]
     }) => void
     ['no-response']: (arg:{username:string}) => void
+    ['clear-no-response']:() => void
+    ['clear-allowed-users']:() => void
     ['new-player']: (arg:{username:string}) => void
     ['all-players']: (arg:Player[]) => void
     ['deck']: (arg:Card[]) => void
@@ -61,10 +62,11 @@ declare global{
     ['activate-attempt']: (arg:{
       action:Actions | null,
       newAllowedUsers: string[],
-      allowedUsers: string[]
     }) => void
     ['no-response']: (arg:{username:string}) => void
     ['clear-players']: () => void
+    ['clear-no-response']:() => void
+    ['clear-allowed-users']:() => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:string) => void
     ['turn-count']: (arg:number) => void

@@ -212,16 +212,55 @@ io.on('connection', (socket) => {
     })
   })
 
+  socket.on('clear-no-response',()=>{
+    console.log('clear-no-response')
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.noResponses = []
+      console.log('GAME no response clear',{
+        noResponses:rooms[playerRoom].gameState.noResponses,
+        currentActions:rooms[playerRoom].gameState.currentActions,
+        allowedUsers:rooms[playerRoom].gameState.allowedUsers
+      })
+    }
+    emitToPlayerRoom(io,socket,'clear-no-response')
+  })
+
+  socket.on('clear-allowed-users',()=>{
+    console.log('clear-allowed-users')
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.allowedUsers = []
+    }
+    console.log('GAME clear',{
+      noResponses:rooms[playerRoom].gameState.noResponses,
+      currentActions:rooms[playerRoom].gameState.currentActions,
+      allowedUsers:rooms[playerRoom].gameState.allowedUsers
+    })
+    emitToPlayerRoom(io,socket,'clear-allowed-users')
+  })
+
   socket.on('no-response',(data)=>{
     console.log('no-response')
+    const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
-      rooms[playerRoom].gameState.noResponses = [...rooms[playerRoom].gameState.noResponses,data.noResponses]
+      rooms[playerRoom].gameState.noResponses = [...rooms[playerRoom].gameState.noResponses,data]
+      console.log('GAME',{
+        noResponses:rooms[playerRoom].gameState.noResponses,
+        currentActions:rooms[playerRoom].gameState.currentActions,
+        allowedUsers:rooms[playerRoom].gameState.allowedUsers
+      })
     }
+    
     emitToPlayerRoom(io,socket,'no-response',data)
   })
 
   socket.on('next-action-response',(data)=>{
     console.log('next-action-response',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState
+    }
     emitToPlayerRoom(io,socket,'next-action-response', data)
   })
 })

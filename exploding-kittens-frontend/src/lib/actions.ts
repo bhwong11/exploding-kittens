@@ -416,6 +416,7 @@ export const useCardActions = ()=>{
       return
     }
     if(setTurnCount)(setTurnCount(prev=>prev+1))
+    setActionsComplete(prev=>prev+1)
   }
 
   type ActionImpl =  {
