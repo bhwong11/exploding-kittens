@@ -11,6 +11,7 @@ export default function Home() {
       room - first person in is host, create assets button.
       game Over - disable everything save wins to users
       disable create game assets once created
+      add READ.ME
     </main>
   )
 }
