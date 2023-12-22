@@ -6,16 +6,12 @@ export default function Home() {
       HOME!
       
       //stuff we need to do
-      add auth page + backend routes - c
-      Add way to create and enter room - c
-      leaderboard component
-
-      //stuff for initial setup/populate context
-      making/shuffling the deck emit on socket.io - b
-      making initial hands - b
-      turn count handling
-      room size limits
-      actions
+      homepage - unatuhenciated, leaderboard
+      rooms page - authenticated route
+      room - first person in is host, create assets button.
+      game Over - disable everything save wins to users
+      disable create game assets once created
+      add READ.ME
     </main>
   )
 }
