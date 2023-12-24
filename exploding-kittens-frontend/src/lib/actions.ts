@@ -1,7 +1,7 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, startTransition, useTransition, useRef } from "react"
 import { addCardsToHand, getNonLostPlayers, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
@@ -138,6 +138,7 @@ export const useCardActions = ()=>{
     socket,
     turnCount,
     attackTurns,
+    currentActions,
     setCurrentActions,
     setActionPrompt,
     setAttackTurns,
@@ -149,6 +150,10 @@ export const useCardActions = ()=>{
 
   const players = getNonLostPlayers(allPlayers ?? [])
   const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
+
+  const sendActionComplete = ()=>{
+    socket?.emit('action-complete',currentActions??[])
+  }
 
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
@@ -168,7 +173,8 @@ export const useCardActions = ()=>{
     })
     if(complete && setActionPrompt) {
       setActionPrompt(null)
-      setActionsComplete(prev=>prev+1)
+      console.log('set complete')
+      sendActionComplete()
     }
   }
 
@@ -340,11 +346,30 @@ export const useCardActions = ()=>{
     }),
   ]
   
+  const [nopePending,startNopeTransition] = useTransition()
+  const prevNopePending = useRef(false)
+
   const nopeAction = () =>{
     console.log('activate nope')
+    // startNopeTransition(()=>{
+    //   if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
+    // })
+    // console.log('CC ACTUINBS',currentActions)
     if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
-    setActionsComplete(prev=>prev+1)
+    if(turnPlayer.username===currentPlayer?.username){
+      socket?.emit('action-complete',currentActions ?? [])
+    }
   }
+
+  // useEffect(()=>{
+  //   console.log('NOPE PENDING',prevNopePending.current,nopePending)
+  //   if(prevNopePending.current && !nopePending){
+  //     if(turnPlayer.username===currentPlayer?.username){
+  //       socket?.emit('action-complete',currentActions ?? [])
+  //     }
+  //   }
+  //   prevNopePending.current = nopePending
+  // },[nopePending])
 
   const diffuseAction = () =>{
     //only activate if turn player
@@ -353,7 +378,6 @@ export const useCardActions = ()=>{
     )
     if(!setActionPrompt) return 
     setActionPrompt(diffuseActionPrompts)
-    setActionsComplete(prev=>prev+1)
     console.log('diffuse')
   }
 
@@ -373,7 +397,7 @@ export const useCardActions = ()=>{
   }
 
   const seeTheFutureAction = ()=>{
-    console.log('shuffle action')
+    console.log('see the future')
     if(!setActionPrompt) return 
     setActionPrompt(seeTheFutureActionPrompts)
   }
@@ -382,6 +406,7 @@ export const useCardActions = ()=>{
     console.log('attack action')
     if(setAttackTurns)setAttackTurns(prev=>prev+1)
     if(setTurnCount)(setTurnCount(prev=>prev+1))
+    sendActionComplete()
   }
 
   const explodingAction = ()=>{
@@ -398,7 +423,7 @@ export const useCardActions = ()=>{
     socket?.emit('all-players',newPlayers ?? [])
     discardCards(turnPlayer?.cards ?? [])
     console.log('exploding')
-    setActionsComplete(prev=>prev+1)
+    sendActionComplete()
   }
 
   const shuffleAction = ()=>{
@@ -406,7 +431,7 @@ export const useCardActions = ()=>{
       socket?.emit('deck',shuffleArray(deck ?? []))
     }
     console.log('shuffle')
-    setActionsComplete(prev=>prev+1)
+    sendActionComplete()
   }
 
   const skip = ()=>{
@@ -416,7 +441,9 @@ export const useCardActions = ()=>{
       return
     }
     if(setTurnCount)(setTurnCount(prev=>prev+1))
-    setActionsComplete(prev=>prev+1)
+    if(turnPlayer.username===currentPlayer?.username){
+      sendActionComplete()
+    }
   }
 
   type ActionImpl =  {

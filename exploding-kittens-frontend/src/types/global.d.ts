@@ -37,12 +37,26 @@ declare global{
   interface ServerToClientEvents {
     ['new-page-backend']: (arg:{message:string}) => void
     ['activate-attempt']: (arg:{
-      action:Actions,
+      actions:Actions[],
       newAllowedUsers: string[],
     }) => void
-    ['no-response']: (arg:{username:string}) => void
+    ['current-actions']: (arg:Actions[]) => void
+    ['no-response']: (arg:{username:string}[]) => void
+    ['refresh-game-state']: (arg:{  
+      deck: Card[],
+      discardPile: Card[],
+      turnCount: number,
+      currentActions:Actions[],
+      noResponses:{username:string}[],
+      allowedUsers:string[],
+      actionPromptType:Actions,
+      actionPromptIndex:number,
+      attackTurns: number,
+    }) => void
     ['clear-no-response']:() => void
+    ['action-complete']:(arg:Actions[]) => void
     ['clear-allowed-users']:() => void
+    ['clear-current-actions']:() => void
     ['new-player']: (arg:{username:string}) => void
     ['all-players']: (arg:Player[]) => void
     ['deck']: (arg:Card[]) => void
@@ -60,13 +74,18 @@ declare global{
     ['new-player']: (arg:{username:string}) => void
     ['all-players']: (arg:Player[]) => void
     ['activate-attempt']: (arg:{
-      action:Actions | null,
+      actions:Actions[],
       newAllowedUsers: string[],
     }) => void
-    ['no-response']: (arg:{username:string}) => void
+    ['current-actions']: (arg:Actions[]) => void
+    ['no-response']: (arg:{username:string}[]) => void
     ['clear-players']: () => void
+    ['clear-game-state']: () => void
     ['clear-no-response']:() => void
     ['clear-allowed-users']:() => void
+    ['refresh-game-state']:() => void
+    ['action-complete']:(arg:Actions[]) => void
+    ['clear-current-actions']:() => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:string) => void
     ['turn-count']: (arg:number) => void

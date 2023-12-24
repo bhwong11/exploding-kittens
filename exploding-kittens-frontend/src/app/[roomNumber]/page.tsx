@@ -31,7 +31,7 @@ const Room = ({params}:RoomParams)=>{
 
   const {createGameAssets} = useInitGame()
 
-  const {joinRoom, clearPlayers}= usePlayerSocket()
+  const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket()
 
   useEffect(()=>{
     //add to .env
@@ -84,6 +84,9 @@ const Room = ({params}:RoomParams)=>{
         <button onClick={clearPlayers} className="btn btn-blue">
             clear players
         </button>
+        <button onClick={clearGameState} className="btn btn-blue">
+            clear gameState
+        </button>
       </div>
       <OtherPlayers/>
       <div className="border border-black">
@@ -97,7 +100,7 @@ const Room = ({params}:RoomParams)=>{
         <button 
           onClick={createGameAssets} 
           className="btn btn-blue" 
-          disabled={players && players.length < 3}
+          //disabled={players && players.length < 3}
         >
           create game assets(need at least one joined user for this to work)
         </button>

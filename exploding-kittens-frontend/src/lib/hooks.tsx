@@ -1,10 +1,11 @@
-import { useEffect, useState, useTransition} from "react"
+import { useEffect, useState, useTransition,useRef} from "react"
 import { io, Socket } from "socket.io-client"
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
 import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
+import { start } from "repl"
 //show prompt hook
 
 export const usePlayerSocket=()=>{
@@ -38,6 +39,15 @@ export const usePlayerSocket=()=>{
     currentSocket?.emit('clear-players')
   }
 
+  const clearGameState= ():void=>{
+    currentSocket?.emit('clear-game-state')
+  }
+
+  const refreshGameState = ()=>{
+    console.log('REFRESHING')
+    currentSocket?.emit('refresh-game-state')
+  }
+
   type JoinRoomProps = {
     username?:string, room?:string
   }
@@ -55,6 +65,7 @@ export const usePlayerSocket=()=>{
         ...currentPlayer,
         ...(username?{username}:{})
       })
+      refreshGameState()
     }else{
       console.error('socket not initialized yet')
     }
@@ -63,13 +74,14 @@ export const usePlayerSocket=()=>{
   return {
     joinRoom,
     isPlayerInRoom,
-    clearPlayers
+    clearPlayers,
+    clearGameState,
+    refreshGameState
   }
 }
 
-type UseActivateResponseHandlersProps = {initListeners:boolean}
-export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHandlersProps={initListeners:false})=>{
-
+type UseActivateResponseHandlersProps = {implActions:boolean}
+export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandlersProps={implActions:false})=>{
   const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
   const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
   const players = getNonLostPlayers(allPlayers ?? [])
@@ -84,37 +96,86 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
   useEffect(()=>{
     //if all players that can respond respond with no response, implement all actions in "chain"
-    console.log('ACTIONS',actionsComplete) //it's always 0?
-    if(!initListeners) return
     if(
       noResponses.length>=(allowedUsers?.length || 0) 
       && currentActions?.length
+      && implActions
     ){
-      if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
+      console.log('CATUON',noResponses?.length,allowedUsers?.length)
+      //if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
 
       //implement action
-      actions[currentActions[currentActions.length-1]]()
+      startActionTransition(()=>{
+        actions[currentActions[currentActions.length-1]]()
+      })
 
       //reset allowed users, responses, and hide response prompt
-      setAllowedUsers([])
-      socket?.emit('clear-allowed-users')
+      // socket?.emit('clear-allowed-users')
+      // socket?.emit('clear-no-response')
     }
     
     if(!currentActions?.length){
-      setNoResponses([])
-      socket?.emit('clear-no-response')
-      setActionsComplete(0)
+      console.log('COMPELTE LENGTH')
+      //setActionsComplete(0)
     }
-  },[noResponses?.length,actionsComplete,allowedUsers?.length])
+  },[noResponses?.length
+    //,actionsComplete
+    ,allowedUsers?.length])
+
+  const [actionsCompleted,setActionsCompleted] = useState(0)
+  //console.log('ACTIONS COMPPLTED',actionsCompleted)
+  useEffect(()=>{
+    if(!(socket?.id && implActions)) return
+
+    socket?.on('action-complete',(currentActions)=>{
+      setActionsCompleted(prev=>prev+1)
+    })
+  },[socket?.id])
+
+  const [pending,startTransition]= useTransition()
+  const [isPendingAction,startActionTransition]= useTransition()
+  const prevPending = useRef(false)
+  const prevActionPending = useRef(false)
+
+  useEffect(()=>{
+    if(!currentActions?.length) return 
+    console.log('CURRENT ACTION LENGTH',actionsCompleted,currentActions,prevActionPending.current,isPendingAction)
+    if(!actionsCompleted) return
+    console.log('STETRIBG',prevActionPending.current,!isPendingAction)
+    if(prevActionPending.current && !isPendingAction){
+      console.log('start')
+      startTransition(()=>{
+        if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
+        socket?.emit('current-actions',currentActions.slice(0,currentActions.length-1))
+      })
+    }
+    prevActionPending.current = isPendingAction
+
+  },[actionsCompleted,isPendingAction])
+
+  useEffect(()=>{
+    console.log('ACTION',currentActions,prevPending.current,pending)
+    if(!currentActions?.length) {
+      socket?.emit('clear-allowed-users')
+      socket?.emit('clear-no-response')
+      return
+    }
+    if(prevPending && !pending){
+      startActionTransition(()=>{
+        actions[currentActions[currentActions.length-1]]()
+      })
+    }
+    prevPending.current = pending
+  },[pending])
 
 
   useEffect(()=>{
-    if(!socket?.id || !currentPlayer || !initListeners) return
+    if(!socket?.id || !currentPlayer) return
     //if action is allow, add action to current action "chain"
     socket?.on('activate-attempt',(data)=>{
       if(!setCurrentActions) return
 
-      setCurrentActions(prev=>[...prev,data.action])
+      setCurrentActions(data.actions)
       setNoResponses([])
       //useEffect on action hook that sets a context var that it's complete
       //set response restrictions
@@ -122,7 +183,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     })
 
     socket?.on('no-response',(data)=>{
-      setNoResponses(prev=>[...prev,{username:data.username}])
+      setNoResponses(data)
     })
 
     socket?.on('clear-no-response',()=>{
@@ -138,6 +199,16 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       socket?.disconnect();
     }
   },[socket?.id,currentPlayer?.username])
+
+  useEffect(()=>{
+    if(!socket) return
+    socket?.on('refresh-game-state',(data)=>{
+      console.log('DATA',data)
+      if(setCurrentActions) setCurrentActions(data.currentActions)
+      setNoResponses(data.noResponses)
+      setAllowedUsers(data.allowedUsers)
+    })
+  },[socket])
 
 
   //sends emit for action to be added to current stack and allowed responses
@@ -164,7 +235,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     discardCards(cards,cardId,cardType)
 
     socket?.emit('activate-attempt',{
-      action,
+      actions:[...(currentActions ?? []),...(action?[action]:[])],
       newAllowedUsers
     })
   }
@@ -175,9 +246,9 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       console.error('username not found in send response')
       return
     }
-    socket?.emit('no-response',{
+    socket?.emit('no-response',[...noResponses,{
       username
-    })
+    }])
   }
 
   return {
@@ -274,7 +345,6 @@ export const useInitGame = () => {
         newPlayers[currPlayerIndx].cards = hand
       }
     }
-    console.log('NEW PLAYER',newPlayers)
     socket?.emit('all-players',newPlayers)
   }
 

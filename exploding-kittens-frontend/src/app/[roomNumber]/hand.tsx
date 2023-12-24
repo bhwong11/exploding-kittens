@@ -2,7 +2,7 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
 import { useGameActions } from "@/lib/actions"
-import { useState, useEffect,lazy, Suspense,memo } from "react"
+import { useState, useEffect,lazy, Suspense,memo, useTransition } from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
 
@@ -30,6 +30,8 @@ const Hand = ()=>{
 
   const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
+  const currentCards = players?.find(p=>p.username===currentPlayer?.username)?.cards
+
   useEffect(()=>{
     setSelectedCards([])
   },[turnCount])
@@ -39,6 +41,11 @@ const Hand = ()=>{
     if(!allowedResponseUsers.includes(currentPlayer?.username || '')) return
     setSelectedCards(validResponseCards)
   },[allowedResponseUsers])
+
+  //if card is discarded, unselect it
+  useEffect(()=>{
+    setSelectedCards(selectedCards.filter(card=>((currentCards?.map(c=>c.id) ?? []).includes(card.id))))
+  },[currentCards?.length])
 
   useEffect(()=>{
     if(!socket) return
@@ -85,7 +92,6 @@ const Hand = ()=>{
     toggleSelected(card)
   }
 
-  const currentCards = players?.find(p=>p.username===currentPlayer?.username)?.cards
   return (
   <div>
     hand:

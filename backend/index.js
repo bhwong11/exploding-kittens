@@ -178,12 +178,40 @@ io.on('connection', (socket) => {
   })
 
   socket.on('clear-players',()=>{
-    console.log('clear-players')
+    console.log('clear-players',Array.from(socket.rooms))
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
       rooms[playerRoom].players = []
       emitToPlayerRoom(io,socket,'all-players', rooms[playerRoom].players)
     }
+  })
+
+  socket.on('action-complete',(data)=>{
+    console.log('action-complete')
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      emitToPlayerRoom(io,socket,'action-complete',data)
+    }
+  })
+
+  socket.on('clear-game-state',()=>{
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState={
+        deck:[],
+        discardPile:[],
+        turnCount:0,
+        //current action data
+        currentActions:[],
+        noResponses:[],
+        allowedUsers:[],
+        //action prompt Data
+        actionPromptType:'',
+        actionPromptIndex:0,
+        attackTurns:0,
+      }
+    }
+    emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom].gameState)
   })
 
   socket.on('turn-count',(data)=>{
@@ -200,9 +228,18 @@ io.on('connection', (socket) => {
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
       rooms[playerRoom].gameState.allowedUsers = data.newAllowedUsers
-      rooms[playerRoom].gameState.currentActions = [...rooms[playerRoom].gameState.currentActions,data.action]
+      rooms[playerRoom].gameState.currentActions = data.actions
     }
     emitToPlayerRoom(io,socket,'activate-attempt', data)
+  })
+
+  socket.on('current-actions',(data)=>{
+    console.log('current-actions',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.currentActions = data
+    }
+    emitToPlayerRoom(io,socket,'current-actions', data)
   })
 
   socket.on('error',(data)=>{
@@ -217,11 +254,6 @@ io.on('connection', (socket) => {
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
       rooms[playerRoom].gameState.noResponses = []
-      console.log('GAME no response clear',{
-        noResponses:rooms[playerRoom].gameState.noResponses,
-        currentActions:rooms[playerRoom].gameState.currentActions,
-        allowedUsers:rooms[playerRoom].gameState.allowedUsers
-      })
     }
     emitToPlayerRoom(io,socket,'clear-no-response')
   })
@@ -232,11 +264,6 @@ io.on('connection', (socket) => {
     if(rooms[playerRoom]){
       rooms[playerRoom].gameState.allowedUsers = []
     }
-    console.log('GAME clear',{
-      noResponses:rooms[playerRoom].gameState.noResponses,
-      currentActions:rooms[playerRoom].gameState.currentActions,
-      allowedUsers:rooms[playerRoom].gameState.allowedUsers
-    })
     emitToPlayerRoom(io,socket,'clear-allowed-users')
   })
 
@@ -244,12 +271,7 @@ io.on('connection', (socket) => {
     console.log('no-response')
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
-      rooms[playerRoom].gameState.noResponses = [...rooms[playerRoom].gameState.noResponses,data]
-      console.log('GAME',{
-        noResponses:rooms[playerRoom].gameState.noResponses,
-        currentActions:rooms[playerRoom].gameState.currentActions,
-        allowedUsers:rooms[playerRoom].gameState.allowedUsers
-      })
+      rooms[playerRoom].gameState.noResponses = data
     }
     
     emitToPlayerRoom(io,socket,'no-response',data)
@@ -258,10 +280,16 @@ io.on('connection', (socket) => {
   socket.on('next-action-response',(data)=>{
     console.log('next-action-response',data)
     const playerRoom = Array.from(socket.rooms)[1]
-    if(rooms[playerRoom]){
-      rooms[playerRoom].gameState
-    }
     emitToPlayerRoom(io,socket,'next-action-response', data)
+  })
+
+  socket.on('refresh-game-state',()=>{
+    const playerRoom = Array.from(socket.rooms)[1]
+    console.log('ROOMS',socket.id,Array.from(socket.rooms))
+    console.log('refresh-game-state!!!',rooms[playerRoom].gameState)
+    if(rooms[playerRoom]){
+      emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom].gameState)
+    }
   })
 })
 

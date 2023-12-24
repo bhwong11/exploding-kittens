@@ -17,7 +17,7 @@ const ResponseAction = ()=>{
     allowedUsers,
     noResponses,
     sendNoResponse,
-  } = useActivateResponseHandlers({initListeners:true})
+  } = useActivateResponseHandlers({implActions:true})
 
   const responseCardClickHandler = (card:Card)=>{
     const cardAction = Object.values(actionTypes).find(aType=>aType === card.type)
@@ -47,6 +47,9 @@ const ResponseAction = ()=>{
           }
 
             <div className="flex">
+            <button className="btn btn-blue" onClick={()=>attemptActivate('nope')}>
+              send nope
+            </button>
               {validResponseCards.map(card=>(
                 <div key={`response-action-${card.id}`} className="border border-black flex flex-col">
                   {card.type} - {card.id}
