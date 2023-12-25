@@ -123,12 +123,17 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   const [isPendingAction,startActionTransition]= useTransition()
   const prevPending = useRef(false)
   const prevActionPending = useRef(false)
+  const prevActionPendingCompleted = useRef(false)
 
   useEffect(()=>{
     if(!currentActions?.length) return 
     console.log('CURRENT ACTION LENGTH',actionsComplete,currentActions,prevActionPending.current,isPendingAction)
-    console.log('STETRIBG',prevActionPending.current,!isPendingAction,!actionsComplete)
-    if(prevActionPending.current && !isPendingAction && actionsComplete){
+    //make a has completed 
+    if(prevActionPending.current && !isPendingAction){
+      prevActionPendingCompleted.current = true
+    }
+    console.log('STETRIBG',prevActionPending.current,!isPendingAction,actionsComplete,prevActionPendingCompleted.current)
+    if(prevActionPendingCompleted.current && actionsComplete){
       console.log('start')
       startTransition(()=>{
         if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
@@ -144,10 +149,13 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     if(!currentActions?.length) {
       socket?.emit('allowed-users',[])
       socket?.emit('no-response',[])
+      //reset on each action complete
+      setActionsComplete(0)
       // socket?.emit('current-actions',[])
       return
     }
     if(prevPending && !pending){
+      prevActionPendingCompleted.current = false
       startActionTransition(()=>{
         actions[currentActions[currentActions.length-1]]()
       })

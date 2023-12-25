@@ -172,7 +172,6 @@ export const useCardActions = ()=>{
     })
     if(complete && setActionPrompt) {
       setActionPrompt(null)
-      console.log('set complete')
       sendActionComplete()
     }
   }
