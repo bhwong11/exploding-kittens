@@ -53,9 +53,8 @@ declare global{
       actionPromptIndex:number,
       attackTurns: number,
     }) => void
-    ['clear-no-response']:() => void
     ['action-complete']:(arg:Actions[]) => void
-    ['clear-allowed-users']:() => void
+    ['allowed-users']:(arg:string[]) => void
     ['clear-current-actions']:() => void
     ['new-player']: (arg:{username:string}) => void
     ['all-players']: (arg:Player[]) => void
@@ -79,10 +78,9 @@ declare global{
     }) => void
     ['current-actions']: (arg:Actions[]) => void
     ['no-response']: (arg:{username:string}[]) => void
+    ['allowed-users']:(arg:string[]) => void
     ['clear-players']: () => void
     ['clear-game-state']: () => void
-    ['clear-no-response']:() => void
-    ['clear-allowed-users']:() => void
     ['refresh-game-state']:() => void
     ['action-complete']:(arg:Actions[]) => void
     ['clear-current-actions']:() => void

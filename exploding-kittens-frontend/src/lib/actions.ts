@@ -145,7 +145,6 @@ export const useCardActions = ()=>{
     setTurnCount
   } = useGameStateContext() || {}
   const {players:allPlayers,currentPlayer} = usePlayerContext() || {}
-  const [actionsComplete,setActionsComplete]=useState<number>(0)
   const {discardCards} = useGameActions()
 
   const players = getNonLostPlayers(allPlayers ?? [])
@@ -474,8 +473,6 @@ export const useCardActions = ()=>{
 
   return {
     actions,
-    actionsComplete,
-    setActionsComplete,
     actionPromptsData
   }
 }

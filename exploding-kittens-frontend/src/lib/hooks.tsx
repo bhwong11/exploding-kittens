@@ -5,7 +5,6 @@ import { useGameStateContext } from "@/context/gameState"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
 import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
-import { start } from "repl"
 //show prompt hook
 
 export const usePlayerSocket=()=>{
@@ -43,11 +42,6 @@ export const usePlayerSocket=()=>{
     currentSocket?.emit('clear-game-state')
   }
 
-  const refreshGameState = ()=>{
-    console.log('REFRESHING')
-    currentSocket?.emit('refresh-game-state')
-  }
-
   type JoinRoomProps = {
     username?:string, room?:string
   }
@@ -65,7 +59,6 @@ export const usePlayerSocket=()=>{
         ...currentPlayer,
         ...(username?{username}:{})
       })
-      refreshGameState()
     }else{
       console.error('socket not initialized yet')
     }
@@ -75,8 +68,7 @@ export const usePlayerSocket=()=>{
     joinRoom,
     isPlayerInRoom,
     clearPlayers,
-    clearGameState,
-    refreshGameState
+    clearGameState
   }
 }
 
@@ -86,11 +78,15 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
   const players = getNonLostPlayers(allPlayers ?? [])
   const {discardCards} = useGameActions()
+  useEffect(()=>{
+    console.log('INIT!!')
+    socket?.emit('refresh-game-state')
+  },[])
 
   const [noResponses, setNoResponses] = useState<{username:string}[]>([])
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
-  const {actions,setActionsComplete,actionsComplete} = useCardActions()
+  const {actions} = useCardActions()
 
   //when all users respond with "no responses", perform all actions in currentActions stack
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
@@ -106,29 +102,20 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
       //implement action
       startActionTransition(()=>{
+        console.log('first action',currentActions[currentActions.length-1])
         actions[currentActions[currentActions.length-1]]()
       })
-
-      //reset allowed users, responses, and hide response prompt
-      // socket?.emit('clear-allowed-users')
-      // socket?.emit('clear-no-response')
     }
     
-    if(!currentActions?.length){
-      console.log('COMPELTE LENGTH')
-      //setActionsComplete(0)
-    }
-  },[noResponses?.length
-    //,actionsComplete
-    ,allowedUsers?.length])
+  },[noResponses?.length,allowedUsers?.length])
 
-  const [actionsCompleted,setActionsCompleted] = useState(0)
+  const [actionsComplete,setActionsComplete] = useState(0)
   //console.log('ACTIONS COMPPLTED',actionsCompleted)
   useEffect(()=>{
     if(!(socket?.id && implActions)) return
 
-    socket?.on('action-complete',(currentActions)=>{
-      setActionsCompleted(prev=>prev+1)
+    socket?.on('action-complete',()=>{
+      setActionsComplete(prev=>prev+1)
     })
   },[socket?.id])
 
@@ -139,10 +126,9 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
   useEffect(()=>{
     if(!currentActions?.length) return 
-    console.log('CURRENT ACTION LENGTH',actionsCompleted,currentActions,prevActionPending.current,isPendingAction)
-    if(!actionsCompleted) return
-    console.log('STETRIBG',prevActionPending.current,!isPendingAction)
-    if(prevActionPending.current && !isPendingAction){
+    console.log('CURRENT ACTION LENGTH',actionsComplete,currentActions,prevActionPending.current,isPendingAction)
+    console.log('STETRIBG',prevActionPending.current,!isPendingAction,!actionsComplete)
+    if(prevActionPending.current && !isPendingAction && actionsComplete){
       console.log('start')
       startTransition(()=>{
         if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
@@ -151,13 +137,14 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     }
     prevActionPending.current = isPendingAction
 
-  },[actionsCompleted,isPendingAction])
+  },[actionsComplete,isPendingAction])
 
   useEffect(()=>{
     console.log('ACTION',currentActions,prevPending.current,pending)
     if(!currentActions?.length) {
-      socket?.emit('clear-allowed-users')
-      socket?.emit('clear-no-response')
+      socket?.emit('allowed-users',[])
+      socket?.emit('no-response',[])
+      // socket?.emit('current-actions',[])
       return
     }
     if(prevPending && !pending){
@@ -186,12 +173,8 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       setNoResponses(data)
     })
 
-    socket?.on('clear-no-response',()=>{
-      setNoResponses([])
-    })
-
-    socket?.on('clear-allowed-users',()=>{
-      setAllowedUsers([])
+    socket?.on('allowed-users',(data)=>{
+      setAllowedUsers(data)
     })
 
     return ()=>{
@@ -204,9 +187,9 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     if(!socket) return
     socket?.on('refresh-game-state',(data)=>{
       console.log('DATA',data)
-      if(setCurrentActions) setCurrentActions(data.currentActions)
       setNoResponses(data.noResponses)
       setAllowedUsers(data.allowedUsers)
+      if(setCurrentActions) setCurrentActions(data.currentActions)
     })
   },[socket])
 
