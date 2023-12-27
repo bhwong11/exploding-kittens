@@ -78,13 +78,14 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
   const players = getNonLostPlayers(allPlayers ?? [])
   const {discardCards} = useGameActions()
+
+  const [noResponses, setNoResponses] = useState<{username:string}[]>([])
+  const [allowedUsers, setAllowedUsers] = useState<string[]>([])
+
   useEffect(()=>{
     console.log('INIT!!')
     socket?.emit('refresh-game-state')
   },[])
-
-  const [noResponses, setNoResponses] = useState<{username:string}[]>([])
-  const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
   const {actions} = useCardActions()
 
@@ -97,73 +98,71 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       && currentActions?.length
       && implActions
     ){
-      console.log('CATUON',noResponses?.length,allowedUsers?.length)
-      //if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
-
-      //implement action
+      //implement action and start chain
       startActionTransition(()=>{
-        console.log('first action',currentActions[currentActions.length-1])
         actions[currentActions[currentActions.length-1]]()
       })
     }
     
   },[noResponses?.length,allowedUsers?.length])
 
-  const [actionsComplete,setActionsComplete] = useState(false)
-  //console.log('ACTIONS COMPPLTED',actionsCompleted)
+  const [actionComplete,setActionComplete] = useState(false)
+
   useEffect(()=>{
     if(!(socket?.id && implActions)) return
 
+    //set actionComplete true to trigger useEffect that has access to current version of state
     socket?.on('action-complete',()=>{
-      console.log('ACTION COMPLETTE',actionsComplete)
-      setActionsComplete(true)
+      setActionComplete(true)
     })
   },[socket?.id])
 
-  const [pending,startTransition]= useTransition()
+  const [pendingSliceAction,startSliceActionTransition]= useTransition()
   const [isPendingAction,startActionTransition]= useTransition()
-  const prevPending = useRef(false)
+  const prevSliceActionPending = useRef(false)
   const prevActionPending = useRef(false)
-  const prevActionPendingCompleted = useRef(false)
+  const actionPendingTransitionCompleted = useRef(false)
 
+  //useEffect listing for action transition to be completed and actionCompleted set to true
+  //(actionCompleted is to wait for responses with prompts)
   useEffect(()=>{
     if(!currentActions?.length) return 
-    console.log('CURRENT ACTION LENGTH',actionsComplete,currentActions,prevActionPending.current,isPendingAction)
-    //make a has completed 
+
+    //set true if action transition(all state changes from action immediately taking place), are completed
     if(prevActionPending.current && !isPendingAction){
-      prevActionPendingCompleted.current = true
+      actionPendingTransitionCompleted.current = true
     }
-    console.log('STETRIBG',prevActionPending.current,!isPendingAction,actionsComplete,prevActionPendingCompleted.current)
-    if(prevActionPendingCompleted.current && actionsComplete){
-      console.log('start')
-      startTransition(()=>{
+
+    //if state changes are complete and action state is set to true, start transition on slicing top action
+    if(actionPendingTransitionCompleted.current && actionComplete){
+      startSliceActionTransition(()=>{
         if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
-        setActionsComplete(false)
+        setActionComplete(false)
         socket?.emit('current-actions',currentActions.slice(0,currentActions.length-1))
       })
     }
     prevActionPending.current = isPendingAction
 
-  },[actionsComplete,isPendingAction])
+  },[actionComplete,isPendingAction])
 
+  //wait until slicing recent action is complete to start next one
   useEffect(()=>{
-    console.log('ACTION',currentActions,prevPending.current,pending)
-    if(!currentActions?.length) {
-      socket?.emit('allowed-users',[])
-      socket?.emit('no-response',[])
-      //reset on each action complete
-      setActionsComplete(false)
-      // socket?.emit('current-actions',[])
-      return
-    }
-    if(prevPending && !pending){
-      prevActionPendingCompleted.current = false
+    console.log('actions',prevSliceActionPending.current,!pendingSliceAction)
+    if(prevSliceActionPending.current && !pendingSliceAction){
+      console.log('actions 2')
+      actionPendingTransitionCompleted.current = false
+      if(!currentActions?.length) {
+        socket?.emit('allowed-users',[])
+        socket?.emit('no-response',[])
+        setActionComplete(false)
+        return
+      }
       startActionTransition(()=>{
         actions[currentActions[currentActions.length-1]]()
       })
     }
-    prevPending.current = pending
-  },[pending])
+    prevSliceActionPending.current = pendingSliceAction
+  },[pendingSliceAction])
 
 
   useEffect(()=>{
@@ -196,7 +195,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   useEffect(()=>{
     if(!socket) return
     socket?.on('refresh-game-state',(data)=>{
-      console.log('DATA',data)
       setNoResponses(data.noResponses)
       setAllowedUsers(data.allowedUsers)
       if(setCurrentActions) setCurrentActions(data.currentActions)

@@ -53,7 +53,7 @@ declare global{
       actionPromptIndex:number,
       attackTurns: number,
     }) => void
-    ['action-complete']:(arg:Actions[]) => void
+    ['action-complete']:() => void
     ['allowed-users']:(arg:string[]) => void
     ['clear-current-actions']:() => void
     ['new-player']: (arg:{username:string}) => void
@@ -82,7 +82,7 @@ declare global{
     ['clear-players']: () => void
     ['clear-game-state']: () => void
     ['refresh-game-state']:() => void
-    ['action-complete']:(arg:Actions[]) => void
+    ['action-complete']:() => void
     ['clear-current-actions']:() => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:string) => void
