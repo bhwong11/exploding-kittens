@@ -109,13 +109,14 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     
   },[noResponses?.length,allowedUsers?.length])
 
-  const [actionsComplete,setActionsComplete] = useState(0)
+  const [actionsComplete,setActionsComplete] = useState(false)
   //console.log('ACTIONS COMPPLTED',actionsCompleted)
   useEffect(()=>{
     if(!(socket?.id && implActions)) return
 
     socket?.on('action-complete',()=>{
-      setActionsComplete(prev=>prev+1)
+      console.log('ACTION COMPLETTE',actionsComplete)
+      setActionsComplete(true)
     })
   },[socket?.id])
 
@@ -137,6 +138,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       console.log('start')
       startTransition(()=>{
         if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
+        setActionsComplete(false)
         socket?.emit('current-actions',currentActions.slice(0,currentActions.length-1))
       })
     }
@@ -150,7 +152,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       socket?.emit('allowed-users',[])
       socket?.emit('no-response',[])
       //reset on each action complete
-      setActionsComplete(0)
+      setActionsComplete(false)
       // socket?.emit('current-actions',[])
       return
     }
