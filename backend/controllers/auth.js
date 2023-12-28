@@ -34,14 +34,14 @@ const login = async (req, res) => {
 
 const refresh = async (req, res) => {
   console.log('succesful refresh')
-  console.log('access token:', req.accessToken)
-  console.log('refresh token:', req.refreshToken)
+  console.log('access token:', req.accessToken ?? req.cookies['accessToken'])
+  console.log('refresh token:', req.refreshToken ?? req.cookies['refreshToken'])
   console.log('user: ', req.user)
   const existingUser = await User.findOne({username: req.user.username})
   const { username, rooms, wins, id, _id } = existingUser
   return res
-    .cookie('accessToken', req.accessToken, { httpOnly: true })
-    .cookie('refreshToken', req.refreshToken, { httpOnly: true })
+    .cookie('accessToken', req.accessToken ?? req.cookies['accessToken'], { httpOnly: true })
+    .cookie('refreshToken', req.refreshToken ?? req.cookies['refreshToken'], { httpOnly: true })
     .json({username, rooms, wins, id, _id})
     .status(200)
 }
