@@ -49,7 +49,7 @@ declare global{
       currentActions:Actions[],
       noResponses:{username:string}[],
       allowedUsers:string[],
-      actionPromptType:Actions,
+      actionPromptFormObject:{[key:string]:any},
       actionPromptIndex:number,
       attackTurns: number,
     }) => void
@@ -61,8 +61,10 @@ declare global{
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:{message:string}) => void
     ['turn-count']: (arg:number) => void
+    ['attack-turns']: (arg:number) => void
     ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
+      actionPromptIndex:number,
       formObject:{[key:string]:any}
       complete:boolean
     }) => void
@@ -87,6 +89,7 @@ declare global{
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:string) => void
     ['turn-count']: (arg:number) => void
+    ['attack-turns']: (arg:number) => void
     ['discard-pile']: (arg:Card[]) => void
     ['next-action-response']: (arg:{
       formObject:{[key:string]:any}

@@ -140,8 +140,7 @@ export const useCardActions = ()=>{
     attackTurns,
     setCurrentActions,
     setActionPrompt,
-    setAttackTurns,
-    setTurnCount
+    setAttackTurns
   } = useGameStateContext() || {}
   const {players:allPlayers,currentPlayer} = usePlayerContext() || {}
   const {discardCards} = useGameActions()
@@ -388,8 +387,8 @@ export const useCardActions = ()=>{
 
   const attackAction = ()=>{
     console.log('attack action')
-    if(setAttackTurns)setAttackTurns(prev=>prev+1)
-    if(setTurnCount)(setTurnCount(prev=>prev+1))
+    socket?.emit('attack-turns',(attackTurns??0)+1)
+    socket?.emit('turn-count',(turnCount??0)+1)
     sendActionComplete(true)
   }
 
@@ -422,16 +421,17 @@ export const useCardActions = ()=>{
     console.log('skip')
     if(attackTurns){
       if(setAttackTurns)setAttackTurns(prev=>prev-1)
+      socket?.emit('attack-turns',(attackTurns??0)+1)
       return
     }
-    if(setTurnCount)(setTurnCount(prev=>prev+1))
+    socket?.emit('turn-count',(turnCount??0)+1)
     sendActionComplete(true)
   }
 
-  type ActionImpl =  {
+  type ActionKeys =  {
     [key in Actions]: any
   }
-  const actions:ActionImpl  = {
+  const actions:ActionKeys  = {
     //make this objects with an impl method
     [actionTypes.attack]:attackAction,
     [actionTypes.diffuse]:diffuseAction,
@@ -451,7 +451,7 @@ export const useCardActions = ()=>{
     [actionTypes.multiple3]:multiple3ActionPrompts,
     [actionTypes.favor]:favorActionPrompts,
     [actionTypes.seeTheFuture]:seeTheFutureActionPrompts
-  }
+  } as ActionKeys
 
 
   return {

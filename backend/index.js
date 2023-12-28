@@ -97,14 +97,14 @@ io.on('connection', (socket) => {
           deck:[],
           discardPile:[],
           turnCount:0,
+          attackTurns:0,
           //current action data
           currentActions:[],
           noResponses:[],
           allowedUsers:[],
           //action prompt Data
-          actionPromptType:'',
+          actionPromptFormObject:null,
           actionPromptIndex:0,
-          attackTurns:0,
         }
       }
     }
@@ -201,28 +201,28 @@ io.on('connection', (socket) => {
         deck:[],
         discardPile:[],
         turnCount:0,
+        attackTurns:0,
         //current action data
         currentActions:[],
         noResponses:[],
         allowedUsers:[],
         //action prompt Data
-        actionPromptType:'',
+        actionPromptFormObject:null,
         actionPromptIndex:0,
-        attackTurns:0,
       }
     }
     emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState ?? {
       deck:[],
       discardPile:[],
       turnCount:0,
+      attackTurns:0,
       //current action data
       currentActions:[],
       noResponses:[],
       allowedUsers:[],
       //action prompt Data
-      actionPromptType:'',
+      actionPromptFormObject:null,
       actionPromptIndex:0,
-      attackTurns:0,
     })
   })
 
@@ -233,6 +233,15 @@ io.on('connection', (socket) => {
       rooms[playerRoom].gameState.turnCount = data
     }
     emitToPlayerRoom(io,socket,'turn-count', data)
+  })
+
+  socket.on('attack-turns',(data)=>{
+    console.log('attack-turns',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.attackTurns = data
+    }
+    emitToPlayerRoom(io,socket,'attack-turns', data)
   })
 
   socket.on('activate-attempt',(data)=>{
@@ -282,7 +291,17 @@ io.on('connection', (socket) => {
 
   socket.on('next-action-response',(data)=>{
     console.log('next-action-response',data)
-    emitToPlayerRoom(io,socket,'next-action-response', data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.actionPromptIndex = data.complete?0:(
+        rooms[playerRoom].gameState.actionPromptIndex+1
+      )
+      rooms[playerRoom].gameState.actionPromptFormObject = data.formObject
+    }
+    emitToPlayerRoom(io,socket,'next-action-response', {
+      ...data,
+      actionPromptIndex:rooms[playerRoom].gameState.actionPromptIndex
+    })
   })
 
   socket.on('refresh-game-state',()=>{
@@ -295,14 +314,14 @@ io.on('connection', (socket) => {
         deck:[],
         discardPile:[],
         turnCount:0,
+        attackTurns:0,
         //current action data
         currentActions:[],
         noResponses:[],
         allowedUsers:[],
         //action prompt Data
-        actionPromptType:'',
+        actionPromptFormObject:null,
         actionPromptIndex:0,
-        attackTurns:0,
       })
     }
   })

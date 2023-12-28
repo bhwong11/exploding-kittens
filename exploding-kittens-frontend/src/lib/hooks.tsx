@@ -8,7 +8,17 @@ import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
 //show prompt hook
 
 export const usePlayerSocket=()=>{
-  const {setSocket,socket:currentSocket} = useGameStateContext() || {}
+  const {
+    currentActions,
+    setSocket,
+    socket:currentSocket,
+    setCurrentActions,
+    setAttackTurns,
+    setActionPrompt,
+    setDeck,
+    setDiscardPile,
+    setTurnCount,
+  } = useGameStateContext() || {}
   const {setPlayers,players,setCurrentPlayer,currentPlayer} = usePlayerContext() || {}
 
   let socket:Socket<ServerToClientEvents, ClientToServerEvents> | null  = null
@@ -22,6 +32,15 @@ export const usePlayerSocket=()=>{
 
     socket.on('all-players',(data)=>{
       if(setPlayers)setPlayers(data)
+    })
+
+    socket.on('refresh-game-state',data=>{
+      console.log('DATA',data)
+      if(setCurrentActions) setCurrentActions(data.currentActions)
+      if(setAttackTurns) setAttackTurns(data.attackTurns)
+      if(setDeck) setDeck(data.deck)
+      if(setDiscardPile) setDiscardPile(data.discardPile)
+      if(setTurnCount) setTurnCount(data.turnCount)
     })
 
     return () => {
@@ -147,9 +166,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
   //wait until slicing recent action is complete to start next one
   useEffect(()=>{
-    console.log('actions',prevSliceActionPending.current,!pendingSliceAction)
     if(prevSliceActionPending.current && !pendingSliceAction){
-      console.log('actions 2')
       actionPendingTransitionCompleted.current = false
       if(!currentActions?.length) {
         socket?.emit('allowed-users',[])
@@ -197,7 +214,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     socket?.on('refresh-game-state',(data)=>{
       setNoResponses(data.noResponses)
       setAllowedUsers(data.allowedUsers)
-      if(setCurrentActions) setCurrentActions(data.currentActions)
     })
   },[socket])
 
@@ -400,6 +416,9 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
       socket.on('turn-count',(data)=>{
         if(setTurnCount)setTurnCount(data)
       })
+    socket.on('attack-turns',data=>{
+      if(setAttackTurns)setAttackTurns(data)
+    })
   },[socket])
 
   useEffect(()=>{
