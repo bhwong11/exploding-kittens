@@ -5,10 +5,10 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import {
   useInitGame,
-  usePlayerSocket ,
+  usePlayerSocket,
   useTurns
 } from "@/lib/hooks"
-import { authenticate } from "@/lib/helpers"
+import { authenticate,isDevMode } from "@/lib/helpers"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 
@@ -42,16 +42,18 @@ const Room = ({params}:RoomParams)=>{
       })
   },[])
 
-  // useEffect(() => {
-  //   const setData = async () => {
-  //     const playerData = await authenticate()
-  //     if (playerData && setCurrentPlayer) setCurrentPlayer(playerData)
-  //     else router.push('/auth/login')
-  //   }
-  //   if (!currentPlayer) {
-  //     setData()
-  //   }
-  // }, [])
+  useEffect(() => {
+    if(isDevMode) return
+    const setData = async () => {
+      const playerData = await authenticate()
+      if (playerData && setCurrentPlayer) setCurrentPlayer(playerData)
+      else router.push('/auth/login')
+    }
+    if (!currentPlayer) {
+      console.log('no current player')
+      setData()
+    }
+  }, [])
 
   return (
     <div className="w-full">
@@ -100,7 +102,7 @@ const Room = ({params}:RoomParams)=>{
         <button 
           onClick={createGameAssets} 
           className="btn btn-blue" 
-          //disabled={players && players.length < 3}
+          disabled={players && players.length < 3 && !isDevMode}
         >
           create game assets(need at least one joined user for this to work)
         </button>

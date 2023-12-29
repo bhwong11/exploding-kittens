@@ -9,12 +9,10 @@ import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
 
 export const usePlayerSocket=()=>{
   const {
-    currentActions,
     setSocket,
     socket:currentSocket,
     setCurrentActions,
     setAttackTurns,
-    setActionPrompt,
     setDeck,
     setDiscardPile,
     setTurnCount,
@@ -25,7 +23,7 @@ export const usePlayerSocket=()=>{
 
   useEffect(()=>{
     //add to .env
-    socket = io('http://localhost:3000/')
+    socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
     if(setSocket){
       setSocket(socket)
     }
@@ -101,8 +99,8 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   const [noResponses, setNoResponses] = useState<{username:string}[]>([])
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
+  //refresh game state when hand is made
   useEffect(()=>{
-    console.log('INIT!!')
     socket?.emit('refresh-game-state')
   },[])
 
@@ -204,8 +202,9 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     })
 
     return ()=>{
-      console.log('Client disconnected')
-      socket?.disconnect();
+      socket?.off('activate-attempt')
+      socket?.off('no-response')
+      socket?.off('allowed-users')
     }
   },[socket?.id,currentPlayer?.username])
 

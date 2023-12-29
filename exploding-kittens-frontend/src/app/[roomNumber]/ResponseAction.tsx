@@ -6,6 +6,7 @@ import { useGameActions } from "@/lib/actions"
 import { actionTypes } from "@/data"
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
+import { isDevMode } from "@/lib/helpers"
 
 const ResponseAction = ()=>{
   const {validResponseCards} =  useGameActions()
@@ -32,9 +33,13 @@ const ResponseAction = ()=>{
 
   return (
       <div className="w-full">
-        <div>actions:{JSON.stringify(currentActions)}</div>
-        <div>no responses:{JSON.stringify(noResponses)}</div>
-        <div>allowed:{JSON.stringify(allowedUsers)}</div>
+        {isDevMode && 
+          <div>
+            <div>actions:{JSON.stringify(currentActions)}</div>
+            <div>no responses:{JSON.stringify(noResponses)}</div>
+            <div>allowed:{JSON.stringify(allowedUsers)}</div>
+          </div>
+        }
         {showPrompt && (
           <div className="bg-pink-300">
           {validResponseCards.length?(
@@ -47,9 +52,12 @@ const ResponseAction = ()=>{
           }
 
             <div className="flex">
+
+            {isDevMode && 
             <button className="btn btn-blue" onClick={()=>attemptActivate('nope')}>
               send nope
-            </button>
+            </button>}
+
               {validResponseCards.map(card=>(
                 <div key={`response-action-${card.id}`} className="border border-black flex flex-col">
                   {card.type} - {card.id}

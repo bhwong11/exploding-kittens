@@ -195,6 +195,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('clear-game-state',()=>{
+
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
       rooms[playerRoom].gameState={
@@ -210,20 +211,9 @@ io.on('connection', (socket) => {
         actionPromptFormObject:null,
         actionPromptIndex:0,
       }
+      emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState)
     }
-    emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState ?? {
-      deck:[],
-      discardPile:[],
-      turnCount:0,
-      attackTurns:0,
-      //current action data
-      currentActions:[],
-      noResponses:[],
-      allowedUsers:[],
-      //action prompt Data
-      actionPromptFormObject:null,
-      actionPromptIndex:0,
-    })
+
   })
 
   socket.on('turn-count',(data)=>{
@@ -306,23 +296,25 @@ io.on('connection', (socket) => {
 
   socket.on('refresh-game-state',()=>{
     const playerRoom = Array.from(socket.rooms)[1]
-    console.log('ROOMS',socket.id,Array.from(socket.rooms))
-    console.log('refresh-game-state!!!',rooms[playerRoom]?.gameState)
+    console.log('refresh-game-state',rooms[playerRoom]?.gameState)
 
     if(rooms[playerRoom]){
-      emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState ?? {
-        deck:[],
-        discardPile:[],
-        turnCount:0,
-        attackTurns:0,
-        //current action data
-        currentActions:[],
-        noResponses:[],
-        allowedUsers:[],
-        //action prompt Data
-        actionPromptFormObject:null,
-        actionPromptIndex:0,
-      })
+      if(!rooms[playerRoom]?.gameState ){
+        rooms[playerRoom].gameState = {
+          deck:[],
+          discardPile:[],
+          turnCount:0,
+          attackTurns:0,
+          //current action data
+          currentActions:[],
+          noResponses:[],
+          allowedUsers:[],
+          //action prompt Data
+          actionPromptFormObject:null,
+          actionPromptIndex:0,
+        }
+      }
+      emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState)
     }
   })
 })

@@ -428,10 +428,10 @@ export const useCardActions = ()=>{
     sendActionComplete(true)
   }
 
-  type ActionKeys =  {
-    [key in Actions]: any
+  type ActionImpls =  {
+    [key in Actions]: ()=>void
   }
-  const actions:ActionKeys  = {
+  const actions:ActionImpls  = {
     //make this objects with an impl method
     [actionTypes.attack]:attackAction,
     [actionTypes.diffuse]:diffuseAction,
@@ -445,13 +445,25 @@ export const useCardActions = ()=>{
     [actionTypes.skip]:skip,
   }
 
-  const actionPromptsData = {
+  const actionWithPrompts =[
+    actionTypes.diffuse,
+    actionTypes.multiple2,
+    actionTypes.multiple3,
+    actionTypes.favor,
+    actionTypes.seeTheFuture
+  ] as const 
+
+  type ActionPrompts ={
+      [key in typeof actionWithPrompts[number]]:((previousAnswerObject?:{[key:string]: any})=>ActionPromptData)[]
+  }
+
+  const actionPromptsData: ActionPrompts = {
     [actionTypes.diffuse]:diffuseActionPrompts,
     [actionTypes.multiple2]:multiple2ActionPrompts,
     [actionTypes.multiple3]:multiple3ActionPrompts,
     [actionTypes.favor]:favorActionPrompts,
     [actionTypes.seeTheFuture]:seeTheFutureActionPrompts
-  } as ActionKeys
+  }
 
 
   return {
