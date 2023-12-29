@@ -1,4 +1,4 @@
-import { useEffect, useState, useTransition} from "react"
+import { useEffect, useState, useTransition,useRef} from "react"
 import { io, Socket } from "socket.io-client"
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
@@ -8,20 +8,37 @@ import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
 //show prompt hook
 
 export const usePlayerSocket=()=>{
-  const {setSocket,socket:currentSocket} = useGameStateContext() || {}
+  const {
+    setSocket,
+    socket:currentSocket,
+    setCurrentActions,
+    setAttackTurns,
+    setDeck,
+    setDiscardPile,
+    setTurnCount,
+  } = useGameStateContext() || {}
   const {setPlayers,players,setCurrentPlayer,currentPlayer} = usePlayerContext() || {}
 
   let socket:Socket<ServerToClientEvents, ClientToServerEvents> | null  = null
 
   useEffect(()=>{
     //add to .env
-    socket = io('http://localhost:3000/')
+    socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
     if(setSocket){
       setSocket(socket)
     }
 
     socket.on('all-players',(data)=>{
       if(setPlayers)setPlayers(data)
+    })
+
+    socket.on('refresh-game-state',data=>{
+      console.log('DATA',data)
+      if(setCurrentActions) setCurrentActions(data.currentActions)
+      if(setAttackTurns) setAttackTurns(data.attackTurns)
+      if(setDeck) setDeck(data.deck)
+      if(setDiscardPile) setDiscardPile(data.discardPile)
+      if(setTurnCount) setTurnCount(data.turnCount)
     })
 
     return () => {
@@ -38,13 +55,27 @@ export const usePlayerSocket=()=>{
     currentSocket?.emit('clear-players')
   }
 
-  const joinRoom = (username:string, room?:string):void =>{
+  const clearGameState= ():void=>{
+    currentSocket?.emit('clear-game-state')
+  }
+
+  type JoinRoomProps = {
+    username?:string, room?:string
+  }
+  const joinRoom = ({username, room}:JoinRoomProps):void =>{
+    if(!username && !currentPlayer?.username) {
+      console.error('no username or current username found')
+      return
+    }
     if(currentSocket){
       currentSocket.emit('new-player',{
-        username,
+        username: username ?? currentPlayer?.username ?? '',
         ...(room?{room}:{})
       })
-      // if(setCurrentPlayer) setCurrentPlayer({...currentPlayer,username})
+      if(setCurrentPlayer) setCurrentPlayer({
+        ...currentPlayer,
+        ...(username?{username}:{})
+      })
     }else{
       console.error('socket not initialized yet')
     }
@@ -53,83 +84,137 @@ export const usePlayerSocket=()=>{
   return {
     joinRoom,
     isPlayerInRoom,
-    clearPlayers
+    clearPlayers,
+    clearGameState
   }
 }
 
-type UseActivateResponseHandlersProps = {initListeners:boolean}
-export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHandlersProps={initListeners:false})=>{
-
+type UseActivateResponseHandlersProps = {implActions:boolean}
+export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandlersProps={implActions:false})=>{
   const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
   const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
   const players = getNonLostPlayers(allPlayers ?? [])
   const {discardCards} = useGameActions()
 
-  const [showResponsePrompt, setShowResponsePrompt] = useState<boolean>(false)
-  const [noResponses, setNoResponses] = useState<number>(0)
+  const [noResponses, setNoResponses] = useState<{username:string}[]>([])
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
 
-  const {actions,setActionsComplete,actionsComplete} = useCardActions()
+  //refresh game state when hand is made
+  useEffect(()=>{
+    socket?.emit('refresh-game-state')
+  },[])
+
+  const {actions} = useCardActions()
 
   //when all users respond with "no responses", perform all actions in currentActions stack
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
   useEffect(()=>{
     //if all players that can respond respond with no response, implement all actions in "chain"
-    if(!initListeners) return
     if(
-      noResponses>=(allowedUsers?.length || 0) 
+      noResponses.length>=(allowedUsers?.length || 0) 
       && currentActions?.length
+      && implActions
     ){
-      if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
-
-      //implement action
-      actions[currentActions[currentActions.length-1]]()
-
-      //reset allowed users, responses, and hide response prompt
-      setShowResponsePrompt(false)
-      setAllowedUsers(
-        players?.map(p=>p.username)
-        .filter(username=>username===currentPlayer?.username) || []
-      )
+      //implement action and start chain
+      startActionTransition(()=>{
+        actions[currentActions[currentActions.length-1]]()
+      })
     }
     
-    if(!currentActions?.length){
-      setNoResponses(0)
-      setActionsComplete(0)
+  },[noResponses?.length,allowedUsers?.length])
+
+  const [actionComplete,setActionComplete] = useState(false)
+
+  useEffect(()=>{
+    if(!(socket?.id && implActions)) return
+
+    //set actionComplete true to trigger useEffect that has access to current version of state
+    socket?.on('action-complete',()=>{
+      setActionComplete(true)
+    })
+  },[socket?.id])
+
+  const [pendingSliceAction,startSliceActionTransition]= useTransition()
+  const [isPendingAction,startActionTransition]= useTransition()
+  const prevSliceActionPending = useRef(false)
+  const prevActionPending = useRef(false)
+  const actionPendingTransitionCompleted = useRef(false)
+
+  //useEffect listing for action transition to be completed and actionCompleted set to true
+  //(actionCompleted is to wait for responses with prompts)
+  useEffect(()=>{
+    if(!currentActions?.length) return 
+
+    //set true if action transition(all state changes from action immediately taking place), are completed
+    if(prevActionPending.current && !isPendingAction){
+      actionPendingTransitionCompleted.current = true
     }
-    //shouldn't listen for global state data
-  },[noResponses,actionsComplete,allowedUsers?.length])
+
+    //if state changes are complete and action state is set to true, start transition on slicing top action
+    if(actionPendingTransitionCompleted.current && actionComplete){
+      startSliceActionTransition(()=>{
+        if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
+        setActionComplete(false)
+        socket?.emit('current-actions',currentActions.slice(0,currentActions.length-1))
+      })
+    }
+    prevActionPending.current = isPendingAction
+
+  },[actionComplete,isPendingAction])
+
+  //wait until slicing recent action is complete to start next one
+  useEffect(()=>{
+    if(prevSliceActionPending.current && !pendingSliceAction){
+      actionPendingTransitionCompleted.current = false
+      if(!currentActions?.length) {
+        socket?.emit('allowed-users',[])
+        socket?.emit('no-response',[])
+        setActionComplete(false)
+        return
+      }
+      startActionTransition(()=>{
+        actions[currentActions[currentActions.length-1]]()
+      })
+    }
+    prevSliceActionPending.current = pendingSliceAction
+  },[pendingSliceAction])
 
 
   useEffect(()=>{
-    if(!socket?.id || !currentPlayer || !initListeners) return
+    if(!socket?.id || !currentPlayer) return
     //if action is allow, add action to current action "chain"
     socket?.on('activate-attempt',(data)=>{
       if(!setCurrentActions) return
 
-      setCurrentActions(prev=>[...prev,data.action])
-      setNoResponses(0)
+      setCurrentActions(data.actions)
+      setNoResponses([])
       //useEffect on action hook that sets a context var that it's complete
-
-      if(data.newAllowedUsers.includes(currentPlayer.username || '')){
-        setShowResponsePrompt(true)
-      }else{
-        setShowResponsePrompt(false)
-      }
-
       //set response restrictions
       setAllowedUsers(data.newAllowedUsers)
     })
 
-    socket?.on('no-response',()=>{
-      setNoResponses(prev=>prev+1)
+    socket?.on('no-response',(data)=>{
+      setNoResponses(data)
+    })
+
+    socket?.on('allowed-users',(data)=>{
+      setAllowedUsers(data)
     })
 
     return ()=>{
-      console.log('Client disconnected')
-      socket?.disconnect();
+      socket?.off('activate-attempt')
+      socket?.off('no-response')
+      socket?.off('allowed-users')
     }
   },[socket?.id,currentPlayer?.username])
+
+  useEffect(()=>{
+    if(!socket) return
+    socket?.on('refresh-game-state',(data)=>{
+      setNoResponses(data.noResponses)
+      setAllowedUsers(data.allowedUsers)
+    })
+  },[socket])
 
 
   //sends emit for action to be added to current stack and allowed responses
@@ -146,6 +231,7 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
       .filter(username=>username!==currentPlayer?.username) || []
     )
     
+    //add to gameActions hooks
     if(action === actionTypes.exploding){
       newAllowedUsers = currentPlayer?.username?[currentPlayer.username]:[]
     }
@@ -155,23 +241,26 @@ export const useActivateResponseHandlers=({initListeners}:UseActivateResponseHan
     discardCards(cards,cardId,cardType)
 
     socket?.emit('activate-attempt',{
-      action,
-      newAllowedUsers,
-      allowedUsers
+      actions:[...(currentActions ?? []),...(action?[action]:[])],
+      newAllowedUsers
     })
   }
 
   //send no response if no card to respond to current action
-  const sendNoResponse = ()=>{
-    socket?.emit('no-response')
+  const sendNoResponse = (username?:string)=>{
+    if(!username) {
+      console.error('username not found in send response')
+      return
+    }
+    socket?.emit('no-response',[...noResponses,{
+      username
+    }])
   }
 
   return {
     attemptActivate,
     currentActions,
-    //if this is set to true, display option for players to attemptActivate Nope
-    showResponsePrompt,
-    setShowResponsePrompt,
+    allowedUsers,
     sendNoResponse,
     noResponses
   }
@@ -244,6 +333,7 @@ export const useInitGame = () => {
   )
 
   const createHands = ()=>{
+    const newPlayers = [...(players??[])]
     for (let player of players || []){
       const hand:Card[] = []
       const diffuseCard:Card | undefined = diffuseCards.pop()
@@ -255,13 +345,13 @@ export const useInitGame = () => {
         if(newCard) hand.push(newCard)
       }
 
-      const newPlayers = [...(players??[])]
+      //const newPlayers = [...(players??[])]
       const currPlayerIndx = players?.findIndex(p=>p.username === player.username)
       if((currPlayerIndx || currPlayerIndx===0) && currPlayerIndx!==-1){
         newPlayers[currPlayerIndx].cards = hand
       }
-      socket?.emit('all-players',newPlayers)
     }
+    socket?.emit('all-players',newPlayers)
   }
 
   const createDeck=()=>{
@@ -325,6 +415,9 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
       socket.on('turn-count',(data)=>{
         if(setTurnCount)setTurnCount(data)
       })
+    socket.on('attack-turns',data=>{
+      if(setAttackTurns)setAttackTurns(data)
+    })
   },[socket])
 
   useEffect(()=>{

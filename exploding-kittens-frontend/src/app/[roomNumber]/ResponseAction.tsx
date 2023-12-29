@@ -5,16 +5,20 @@ import {
 import { useGameActions } from "@/lib/actions"
 import { actionTypes } from "@/data"
 import { useGameStateContext } from "@/context/gameState"
+import { usePlayerContext } from "@/context/players"
+import { isDevMode } from "@/lib/helpers"
 
 const ResponseAction = ()=>{
   const {validResponseCards} =  useGameActions()
   const {currentActions} =  useGameStateContext() || {}
+  const {currentPlayer} = usePlayerContext() || {}
 
   const {
     attemptActivate,
-    showResponsePrompt,
+    allowedUsers,
+    noResponses,
     sendNoResponse,
-  } = useActivateResponseHandlers({initListeners:true})
+  } = useActivateResponseHandlers({implActions:true})
 
   const responseCardClickHandler = (card:Card)=>{
     const cardAction = Object.values(actionTypes).find(aType=>aType === card.type)
@@ -23,10 +27,20 @@ const ResponseAction = ()=>{
   }
   const lastAction = currentActions?.[(currentActions?.length ?? 0)-1]
 
+  const showPrompt = !noResponses.map(user=>user.username).includes(currentPlayer?.username ?? '')
+    && allowedUsers.includes(currentPlayer?.username ?? '')
+
 
   return (
       <div className="w-full">
-        {showResponsePrompt && (
+        {isDevMode && 
+          <div>
+            <div>actions:{JSON.stringify(currentActions)}</div>
+            <div>no responses:{JSON.stringify(noResponses)}</div>
+            <div>allowed:{JSON.stringify(allowedUsers)}</div>
+          </div>
+        }
+        {showPrompt && (
           <div className="bg-pink-300">
           {validResponseCards.length?(
           <>
@@ -38,6 +52,12 @@ const ResponseAction = ()=>{
           }
 
             <div className="flex">
+
+            {isDevMode && 
+            <button className="btn btn-blue" onClick={()=>attemptActivate('nope')}>
+              send nope
+            </button>}
+
               {validResponseCards.map(card=>(
                 <div key={`response-action-${card.id}`} className="border border-black flex flex-col">
                   {card.type} - {card.id}
@@ -48,7 +68,7 @@ const ResponseAction = ()=>{
               )}
             </div>
             <div>
-              <button className="btn btn-blue" onClick={()=>sendNoResponse()}>
+              <button className="btn btn-blue" onClick={()=>sendNoResponse(currentPlayer?.username)}>
                 no response
               </button>
             </div>

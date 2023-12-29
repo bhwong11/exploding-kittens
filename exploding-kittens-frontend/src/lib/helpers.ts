@@ -54,6 +54,7 @@ export const getNonLostPlayers = (players:Player[])=>(
 )
 
 export const authenticate = async () => {
+  console.log('auth')
   return await fetch('http://localhost:3000/auth/refresh', {
     method: 'POST',
     headers: {
@@ -67,3 +68,5 @@ export const authenticate = async () => {
     return user
   })
 }
+
+export const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'

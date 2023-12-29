@@ -94,9 +94,17 @@ io.on('connection', (socket) => {
       rooms[data.room] = {
         players:[],
         gameState:{
-          turnCount:0,
           deck:[],
-          discardPile:[]
+          discardPile:[],
+          turnCount:0,
+          attackTurns:0,
+          //current action data
+          currentActions:[],
+          noResponses:[],
+          allowedUsers:[],
+          //action prompt Data
+          actionPromptFormObject:null,
+          actionPromptIndex:0,
         }
       }
     }
@@ -139,7 +147,6 @@ io.on('connection', (socket) => {
       lose:false,
       cards:[]
     })
-    console.log('ROOM!!',rooms[data.room]?.players)
     emitToPlayerRoom(io,socket,'all-players',rooms[data.room]?.players ?? [])
   })
 
@@ -171,12 +178,42 @@ io.on('connection', (socket) => {
   })
 
   socket.on('clear-players',()=>{
-    console.log('clear-players')
+    console.log('clear-players',Array.from(socket.rooms))
     const playerRoom = Array.from(socket.rooms)[1]
     if(rooms[playerRoom]){
       rooms[playerRoom].players = []
       emitToPlayerRoom(io,socket,'all-players', rooms[playerRoom].players)
     }
+  })
+
+  socket.on('action-complete',(data)=>{
+    console.log('action-complete')
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      emitToPlayerRoom(io,socket,'action-complete',data)
+    }
+  })
+
+  socket.on('clear-game-state',()=>{
+
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState={
+        deck:[],
+        discardPile:[],
+        turnCount:0,
+        attackTurns:0,
+        //current action data
+        currentActions:[],
+        noResponses:[],
+        allowedUsers:[],
+        //action prompt Data
+        actionPromptFormObject:null,
+        actionPromptIndex:0,
+      }
+      emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState)
+    }
+
   })
 
   socket.on('turn-count',(data)=>{
@@ -188,9 +225,51 @@ io.on('connection', (socket) => {
     emitToPlayerRoom(io,socket,'turn-count', data)
   })
 
+  socket.on('attack-turns',(data)=>{
+    console.log('attack-turns',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.attackTurns = data
+    }
+    emitToPlayerRoom(io,socket,'attack-turns', data)
+  })
+
   socket.on('activate-attempt',(data)=>{
     console.log('activate-attempt',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.allowedUsers = data.newAllowedUsers
+      rooms[playerRoom].gameState.currentActions = data.actions
+    }
     emitToPlayerRoom(io,socket,'activate-attempt', data)
+  })
+
+  socket.on('current-actions',(data)=>{
+    console.log('current-actions',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.currentActions = data
+    }
+    emitToPlayerRoom(io,socket,'current-actions', data)
+  })
+
+  socket.on('allowed-users',(data)=>{
+    console.log('allowed-users',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.allowedUsers = data
+    }
+    emitToPlayerRoom(io,socket,'allowed-users', data)
+  })
+
+  socket.on('no-response',(data)=>{
+    console.log('no-response')
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.noResponses = data
+    }
+    
+    emitToPlayerRoom(io,socket,'no-response',data)
   })
 
   socket.on('error',(data)=>{
@@ -200,14 +279,43 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('no-response',()=>{
-    console.log('no-response')
-    emitToPlayerRoom(io,socket,'no-response')
-  })
-
   socket.on('next-action-response',(data)=>{
     console.log('next-action-response',data)
-    emitToPlayerRoom(io,socket,'next-action-response', data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+      rooms[playerRoom].gameState.actionPromptIndex = data.complete?0:(
+        rooms[playerRoom].gameState.actionPromptIndex+1
+      )
+      rooms[playerRoom].gameState.actionPromptFormObject = data.formObject
+    }
+    emitToPlayerRoom(io,socket,'next-action-response', {
+      ...data,
+      actionPromptIndex:rooms[playerRoom].gameState.actionPromptIndex
+    })
+  })
+
+  socket.on('refresh-game-state',()=>{
+    const playerRoom = Array.from(socket.rooms)[1]
+    console.log('refresh-game-state',rooms[playerRoom]?.gameState)
+
+    if(rooms[playerRoom]){
+      if(!rooms[playerRoom]?.gameState ){
+        rooms[playerRoom].gameState = {
+          deck:[],
+          discardPile:[],
+          turnCount:0,
+          attackTurns:0,
+          //current action data
+          currentActions:[],
+          noResponses:[],
+          allowedUsers:[],
+          //action prompt Data
+          actionPromptFormObject:null,
+          actionPromptIndex:0,
+        }
+      }
+      emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState)
+    }
   })
 })
 

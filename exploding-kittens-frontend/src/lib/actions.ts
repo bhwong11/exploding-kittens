@@ -1,7 +1,7 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
-import { useState, useMemo } from "react"
+import { useMemo} from "react"
 import { addCardsToHand, getNonLostPlayers, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
@@ -140,15 +140,23 @@ export const useCardActions = ()=>{
     attackTurns,
     setCurrentActions,
     setActionPrompt,
-    setAttackTurns,
-    setTurnCount
+    setAttackTurns
   } = useGameStateContext() || {}
   const {players:allPlayers,currentPlayer} = usePlayerContext() || {}
-  const [actionsComplete,setActionsComplete]=useState<number>(0)
   const {discardCards} = useGameActions()
 
   const players = getNonLostPlayers(allPlayers ?? [])
   const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
+
+  const sendActionComplete = (onlyTurnPlayer:boolean)=>{
+    if(onlyTurnPlayer){
+      if(turnPlayer.username===currentPlayer?.username){
+        socket?.emit('action-complete')
+      }
+      return
+    }
+    socket?.emit('action-complete')
+  }
 
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
@@ -168,7 +176,7 @@ export const useCardActions = ()=>{
     })
     if(complete && setActionPrompt) {
       setActionPrompt(null)
-      setActionsComplete(prev=>prev+1)
+      sendActionComplete(false)
     }
   }
 
@@ -266,7 +274,7 @@ export const useCardActions = ()=>{
         },
         submitCallBack:(formData:FormData)=>{
           const playerSelectedUsername = formData?.get('username')?.toString()
-          const selectedPlayerIndex = players?.findIndex(p=>p.username==currentPlayer?.username)
+          const selectedPlayerIndex = players?.findIndex(p=>p.username==playerSelectedUsername)
           if(!selectedPlayerIndex && selectedPlayerIndex!==0){
             console.error('current player index not found')
             return
@@ -339,11 +347,11 @@ export const useCardActions = ()=>{
       }
     }),
   ]
-  
+
   const nopeAction = () =>{
     console.log('activate nope')
     if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
-    setActionsComplete(prev=>prev+1)
+    sendActionComplete(true)
   }
 
   const diffuseAction = () =>{
@@ -353,7 +361,6 @@ export const useCardActions = ()=>{
     )
     if(!setActionPrompt) return 
     setActionPrompt(diffuseActionPrompts)
-    setActionsComplete(prev=>prev+1)
     console.log('diffuse')
   }
 
@@ -373,15 +380,16 @@ export const useCardActions = ()=>{
   }
 
   const seeTheFutureAction = ()=>{
-    console.log('shuffle action')
+    console.log('see the future')
     if(!setActionPrompt) return 
     setActionPrompt(seeTheFutureActionPrompts)
   }
 
   const attackAction = ()=>{
     console.log('attack action')
-    if(setAttackTurns)setAttackTurns(prev=>prev+1)
-    if(setTurnCount)(setTurnCount(prev=>prev+1))
+    socket?.emit('attack-turns',(attackTurns??0)+1)
+    socket?.emit('turn-count',(turnCount??0)+1)
+    sendActionComplete(true)
   }
 
   const explodingAction = ()=>{
@@ -398,7 +406,7 @@ export const useCardActions = ()=>{
     socket?.emit('all-players',newPlayers ?? [])
     discardCards(turnPlayer?.cards ?? [])
     console.log('exploding')
-    setActionsComplete(prev=>prev+1)
+    sendActionComplete(true)
   }
 
   const shuffleAction = ()=>{
@@ -406,22 +414,24 @@ export const useCardActions = ()=>{
       socket?.emit('deck',shuffleArray(deck ?? []))
     }
     console.log('shuffle')
-    setActionsComplete(prev=>prev+1)
+    sendActionComplete(true)
   }
 
   const skip = ()=>{
     console.log('skip')
     if(attackTurns){
       if(setAttackTurns)setAttackTurns(prev=>prev-1)
+      socket?.emit('attack-turns',(attackTurns??0)+1)
       return
     }
-    if(setTurnCount)(setTurnCount(prev=>prev+1))
+    socket?.emit('turn-count',(turnCount??0)+1)
+    sendActionComplete(true)
   }
 
-  type ActionImpl =  {
-    [key in Actions]: any
+  type ActionImpls =  {
+    [key in Actions]: ()=>void
   }
-  const actions:ActionImpl  = {
+  const actions:ActionImpls  = {
     //make this objects with an impl method
     [actionTypes.attack]:attackAction,
     [actionTypes.diffuse]:diffuseAction,
@@ -435,7 +445,19 @@ export const useCardActions = ()=>{
     [actionTypes.skip]:skip,
   }
 
-  const actionPromptsData = {
+  const actionWithPrompts =[
+    actionTypes.diffuse,
+    actionTypes.multiple2,
+    actionTypes.multiple3,
+    actionTypes.favor,
+    actionTypes.seeTheFuture
+  ] as const 
+
+  type ActionPrompts ={
+      [key in typeof actionWithPrompts[number]]:((previousAnswerObject?:{[key:string]: any})=>ActionPromptData)[]
+  }
+
+  const actionPromptsData: ActionPrompts = {
     [actionTypes.diffuse]:diffuseActionPrompts,
     [actionTypes.multiple2]:multiple2ActionPrompts,
     [actionTypes.multiple3]:multiple3ActionPrompts,
@@ -446,8 +468,6 @@ export const useCardActions = ()=>{
 
   return {
     actions,
-    actionsComplete,
-    setActionsComplete,
     actionPromptsData
   }
 }

@@ -16,12 +16,16 @@ const ActionPrompt = ()=>{
     if(!socket) return
     socket?.on('next-action-response',(data)=>{
       if(data.formObject)setPreviousSubmitData(data.formObject)
-      setResponseCount(prev=>prev+1)
+      setResponseCount(data.actionPromptIndex)
       if(data.complete){
         setResponseCount(0)
         setPreviousSubmitData({})
         if(setActionPrompt)setActionPrompt(null)
       }
+    })
+    socket.on('refresh-game-state',data=>{
+      setResponseCount(data.actionPromptIndex)
+      if(data.actionPromptFormObject)setPreviousSubmitData(data.actionPromptFormObject)
     })
   },[socket])
 
