@@ -10,6 +10,13 @@ declare global{
     id?: number
     username?: string
   }
+  type Room = {
+    _id?: string
+    roomNumber?: string
+    createdAt?: string
+    updatedAt?: string
+    users?: User[]
+  }
   type CardType = cardTypesConst[keyof cardTypesConst]["type"]
   type Card = {
     id:number
