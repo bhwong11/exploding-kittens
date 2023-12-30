@@ -158,6 +158,21 @@ export const useCardActions = ()=>{
     socket?.emit('action-complete')
   }
 
+  const asyncEmit = <EmitData>(eventName:string,emitData:EmitData, callBack:Function)=>new Promise((resolve,reject)=>{
+    socket?.emit(eventName,emitData)
+    socket?.on(eventName,(data)=>{
+      callBack(data)
+      socket?.emit('action-complete')
+      socket?.off(eventName)
+      resolve(data)
+    })
+    setTimeout(reject, 2000);
+  })
+
+  const awaitAction = <eventName>(event:eventName)=>{
+
+  }
+
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
   type SubmitResponseEventProps = {

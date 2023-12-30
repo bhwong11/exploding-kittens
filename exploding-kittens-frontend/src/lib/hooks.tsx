@@ -110,16 +110,20 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
   useEffect(()=>{
     //if all players that can respond respond with no response, implement all actions in "chain"
-    if(
-      noResponses.length>=(allowedUsers?.length || 0) 
-      && currentActions?.length
-      && implActions
-    ){
-      //implement action and start chain
-      startActionTransition(()=>{
-        actions[currentActions[currentActions.length-1]]()
-      })
+    const startChain = async () =>{
+      if(
+        noResponses.length>=(allowedUsers?.length || 0) 
+        && currentActions?.length
+        && implActions
+      ){
+        //implement action and start chain
+        //await actions[currentActions[currentActions.length-1]]()
+        startActionTransition(()=>{
+          actions[currentActions[currentActions.length-1]]()
+        })
+      }
     }
+    startChain()
     
   },[noResponses?.length,allowedUsers?.length])
 
@@ -164,19 +168,26 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
   //wait until slicing recent action is complete to start next one
   useEffect(()=>{
-    if(prevSliceActionPending.current && !pendingSliceAction){
-      actionPendingTransitionCompleted.current = false
-      if(!currentActions?.length) {
-        socket?.emit('allowed-users',[])
-        socket?.emit('no-response',[])
-        setActionComplete(false)
-        return
+
+    const implementNextAction = async()=>{
+      if(prevSliceActionPending.current && !pendingSliceAction){
+        actionPendingTransitionCompleted.current = false
+        if(!currentActions?.length) {
+          socket?.emit('allowed-users',[])
+          socket?.emit('no-response',[])
+          setActionComplete(false)
+          return
+        }
+        //await actions[currentActions[currentActions.length-1]]()
+        startActionTransition(()=>{
+          actions[currentActions[currentActions.length-1]]()
+        })
       }
-      startActionTransition(()=>{
-        actions[currentActions[currentActions.length-1]]()
-      })
+      prevSliceActionPending.current = pendingSliceAction
     }
-    prevSliceActionPending.current = pendingSliceAction
+
+    implementNextAction()
+
   },[pendingSliceAction])
 
 
