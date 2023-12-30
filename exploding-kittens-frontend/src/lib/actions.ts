@@ -1,7 +1,7 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
-import { useMemo} from "react"
+import { useMemo, useTransition, useEffect, useRef} from "react"
 import { addCardsToHand, getNonLostPlayers, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
 
 export const useGameActions = ()=>{
@@ -138,6 +138,7 @@ export const useCardActions = ()=>{
     socket,
     turnCount,
     attackTurns,
+    currentActions,
     setCurrentActions,
     setActionPrompt,
     setAttackTurns
@@ -158,20 +159,46 @@ export const useCardActions = ()=>{
     socket?.emit('action-complete')
   }
 
-  const asyncEmit = <EmitData>(eventName:string,emitData:EmitData, callBack:Function)=>new Promise((resolve,reject)=>{
+  type AsyncEmitProps = {
+    eventName:keyof ClientToServerEvents
+    trackedListenEvent:keyof ServerToClientEvents
+    sendCompleteEventOnTransitionComplete?:boolean
+    emitData:any
+    eventDataCallBack?:Function
+  }
+
+  const [isPending,startTransition] = useTransition()
+  const prevIsPending = useRef(false)
+  const shouldSendCompleteEvent = useRef(true)
+
+  useEffect(()=>{
+    if (prevIsPending.current && !isPending){
+      console.log('COMPLETE SEND')
+      sendActionComplete(true)
+    }
+    prevIsPending.current = isPending
+  },[isPending])
+
+  const asyncEmit = ({
+    eventName,
+    trackedListenEvent,
+    sendCompleteEventOnTransitionComplete,
+    emitData,
+    eventDataCallBack
+  }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
     socket?.emit(eventName,emitData)
-    socket?.on(eventName,(data)=>{
-      callBack(data)
-      socket?.emit('action-complete')
-      socket?.off(eventName)
+    shouldSendCompleteEvent.current = sendCompleteEventOnTransitionComplete ?? false
+    prevIsPending.current = false
+    socket?.on(trackedListenEvent,(data:any):void=>{
+      startTransition(()=>{
+        eventDataCallBack?.(data)
+      })
+      console.log('COMPLETING',eventName)
+      socket?.off(trackedListenEvent)
       resolve(data)
     })
     setTimeout(reject, 2000);
   })
-
-  const awaitAction = <eventName>(event:eventName)=>{
-
-  }
 
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
@@ -363,10 +390,17 @@ export const useCardActions = ()=>{
     }),
   ]
 
-  const nopeAction = () =>{
+  const nopeAction = async () =>{
     console.log('activate nope')
-    if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
-    sendActionComplete(true)
+    await asyncEmit({
+      eventName:'current-actions',
+      trackedListenEvent:'current-actions',
+      sendCompleteEventOnTransitionComplete:true,
+      emitData:currentActions?.slice(0,currentActions.length-1) ?? [],
+      eventDataCallBack: (data:Actions[])=>{if(setCurrentActions)setCurrentActions(data)}
+    })
+    //if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
+    // sendActionComplete(true)
   }
 
   const diffuseAction = () =>{

@@ -28,17 +28,21 @@ export const usePlayerSocket=()=>{
       setSocket(socket)
     }
 
-    socket.on('all-players',(data)=>{
+    socket.on('all-players',data=>{
       if(setPlayers)setPlayers(data)
     })
 
     socket.on('refresh-game-state',data=>{
-      console.log('DATA',data)
+      console.log('refresh-game-state-data',data)
       if(setCurrentActions) setCurrentActions(data.currentActions)
       if(setAttackTurns) setAttackTurns(data.attackTurns)
       if(setDeck) setDeck(data.deck)
       if(setDiscardPile) setDiscardPile(data.discardPile)
       if(setTurnCount) setTurnCount(data.turnCount)
+    })
+
+    socket.on('current-actions',data=>{
+      if(setCurrentActions) setCurrentActions(data)
     })
 
     return () => {
@@ -110,14 +114,14 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
   useEffect(()=>{
     //if all players that can respond respond with no response, implement all actions in "chain"
-    const startChain = async () =>{
+    const startChain = () =>{
       if(
         noResponses.length>=(allowedUsers?.length || 0) 
         && currentActions?.length
         && implActions
       ){
         //implement action and start chain
-        //await actions[currentActions[currentActions.length-1]]()
+        // actions[currentActions[currentActions.length-1]]()
         startActionTransition(()=>{
           actions[currentActions[currentActions.length-1]]()
         })
@@ -134,6 +138,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
     //set actionComplete true to trigger useEffect that has access to current version of state
     socket?.on('action-complete',()=>{
+      console.log('ACTION COMPLETE EVENT')
       setActionComplete(true)
     })
   },[socket?.id])
@@ -147,6 +152,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   //useEffect listing for action transition to be completed and actionCompleted set to true
   //(actionCompleted is to wait for responses with prompts)
   useEffect(()=>{
+    console.log('STEP 2',currentActions,actionComplete,prevActionPending.current,isPendingAction)
     if(!currentActions?.length) return 
 
     //set true if action transition(all state changes from action immediately taking place), are completed
@@ -156,6 +162,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
     //if state changes are complete and action state is set to true, start transition on slicing top action
     if(actionPendingTransitionCompleted.current && actionComplete){
+      console.log('START')
       startSliceActionTransition(()=>{
         if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
         setActionComplete(false)
@@ -169,7 +176,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   //wait until slicing recent action is complete to start next one
   useEffect(()=>{
 
-    const implementNextAction = async()=>{
+    const implementNextAction = async ()=>{
       if(prevSliceActionPending.current && !pendingSliceAction){
         actionPendingTransitionCompleted.current = false
         if(!currentActions?.length) {

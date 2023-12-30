@@ -287,11 +287,11 @@ io.on('connection', (socket) => {
         rooms[playerRoom].gameState.actionPromptIndex+1
       )
       rooms[playerRoom].gameState.actionPromptFormObject = data.formObject
+      emitToPlayerRoom(io,socket,'next-action-response', {
+        ...data,
+        actionPromptIndex:rooms[playerRoom].gameState.actionPromptIndex
+      })
     }
-    emitToPlayerRoom(io,socket,'next-action-response', {
-      ...data,
-      actionPromptIndex:rooms[playerRoom].gameState.actionPromptIndex
-    })
   })
 
   socket.on('refresh-game-state',()=>{
