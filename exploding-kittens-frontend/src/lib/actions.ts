@@ -3,6 +3,7 @@ import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
 import { useMemo, useTransition, useEffect, useRef} from "react"
 import { addCardsToHand, getNonLostPlayers, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
+import { useAsyncEmitSocketEvent } from "@/lib/hooks"
 
 export const useGameActions = ()=>{
   const { deck,socket,discardPile,currentActions} = useGameStateContext() || {}
@@ -144,6 +145,7 @@ export const useCardActions = ()=>{
     setAttackTurns
   } = useGameStateContext() || {}
   const {players:allPlayers,currentPlayer} = usePlayerContext() || {}
+  const {asyncEmit} = useAsyncEmitSocketEvent()
   const {discardCards} = useGameActions()
 
   const players = getNonLostPlayers(allPlayers ?? [])
@@ -159,46 +161,49 @@ export const useCardActions = ()=>{
     socket?.emit('action-complete')
   }
 
-  type AsyncEmitProps = {
-    eventName:keyof ClientToServerEvents
-    trackedListenEvent:keyof ServerToClientEvents
-    sendCompleteEventOnTransitionComplete?:boolean
-    emitData:any
-    eventDataCallBack?:Function
-  }
+  // type AsyncEmitProps = {
+  //   eventName:keyof ClientToServerEvents
+  //   trackedListenEvent:keyof ServerToClientEvents
+  //   sendCompleteEventOnTransitionComplete?:boolean
+  //   emitData:any
+  //   eventDataCallBack?:Function
+  // }
 
-  const [isPending,startTransition] = useTransition()
-  const prevIsPending = useRef(false)
-  const shouldSendCompleteEvent = useRef(true)
+  // const [isPending,startTransition] = useTransition()
+  // const prevIsPending = useRef(false)
+  // const shouldSendCompleteEvent = useRef(true)
 
-  useEffect(()=>{
-    if (prevIsPending.current && !isPending){
-      console.log('COMPLETE SEND')
-      sendActionComplete(true)
-    }
-    prevIsPending.current = isPending
-  },[isPending])
+  // useEffect(()=>{
+  //   console.log('action send',currentActions,prevIsPending.current,isPending)
+  //   if (prevIsPending.current && !isPending){
+  //     console.log('COMPLETE SEND')
+  //     sendActionComplete(true)
+  //   }
+  //   prevIsPending.current = isPending
+  // },[isPending])
 
-  const asyncEmit = ({
-    eventName,
-    trackedListenEvent,
-    sendCompleteEventOnTransitionComplete,
-    emitData,
-    eventDataCallBack
-  }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
-    socket?.emit(eventName,emitData)
-    shouldSendCompleteEvent.current = sendCompleteEventOnTransitionComplete ?? false
-    prevIsPending.current = false
-    socket?.on(trackedListenEvent,(data:any):void=>{
-      startTransition(()=>{
-        eventDataCallBack?.(data)
-      })
-      console.log('COMPLETING',eventName)
-      socket?.off(trackedListenEvent)
-      resolve(data)
-    })
-    setTimeout(reject, 2000);
-  })
+  // const asyncEmit = ({
+  //   eventName,
+  //   trackedListenEvent,
+  //   sendCompleteEventOnTransitionComplete,
+  //   emitData,
+  //   eventDataCallBack
+  // }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
+  //   console.log('emit data',eventName,emitData)
+  //   socket?.emit(eventName,emitData)
+  //   shouldSendCompleteEvent.current = sendCompleteEventOnTransitionComplete ?? false
+  //   prevIsPending.current = false
+  //   socket?.on(trackedListenEvent,(data:any):void=>{
+  //     startTransition(()=>{
+  //       console.log('transition start!!',data,eventDataCallBack)
+  //       eventDataCallBack?.(data)
+  //     })
+  //     console.log('COMPLETING',eventName)
+  //     socket?.off(trackedListenEvent)
+  //     resolve(data)
+  //   })
+  //   setTimeout(reject, 2000);
+  // })
 
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain
@@ -391,13 +396,14 @@ export const useCardActions = ()=>{
   ]
 
   const nopeAction = async () =>{
-    console.log('activate nope')
+    console.log('activate nope',currentActions)
     await asyncEmit({
       eventName:'current-actions',
       trackedListenEvent:'current-actions',
       sendCompleteEventOnTransitionComplete:true,
       emitData:currentActions?.slice(0,currentActions.length-1) ?? [],
-      eventDataCallBack: (data:Actions[])=>{if(setCurrentActions)setCurrentActions(data)}
+      eventDataCallBack: (data:Actions[])=>{if(setCurrentActions)setCurrentActions(data)},
+      transitionCompletedCallback:()=>sendActionComplete(true)
     })
     //if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
     // sendActionComplete(true)
@@ -478,7 +484,7 @@ export const useCardActions = ()=>{
   }
 
   type ActionImpls =  {
-    [key in Actions]: ()=>void
+    [key in Actions]: ()=>Promise<void>
   }
   const actions:ActionImpls  = {
     //make this objects with an impl method
