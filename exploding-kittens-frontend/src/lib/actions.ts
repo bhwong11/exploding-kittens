@@ -1,7 +1,7 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
 import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
-import { useMemo, useTransition, useEffect, useRef} from "react"
+import { useMemo} from "react"
 import { addCardsToHand, getNonLostPlayers, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
 import { useAsyncEmitSocketEvent } from "@/lib/hooks"
 
@@ -160,50 +160,6 @@ export const useCardActions = ()=>{
     }
     socket?.emit('action-complete')
   }
-
-  // type AsyncEmitProps = {
-  //   eventName:keyof ClientToServerEvents
-  //   trackedListenEvent:keyof ServerToClientEvents
-  //   sendCompleteEventOnTransitionComplete?:boolean
-  //   emitData:any
-  //   eventDataCallBack?:Function
-  // }
-
-  // const [isPending,startTransition] = useTransition()
-  // const prevIsPending = useRef(false)
-  // const shouldSendCompleteEvent = useRef(true)
-
-  // useEffect(()=>{
-  //   console.log('action send',currentActions,prevIsPending.current,isPending)
-  //   if (prevIsPending.current && !isPending){
-  //     console.log('COMPLETE SEND')
-  //     sendActionComplete(true)
-  //   }
-  //   prevIsPending.current = isPending
-  // },[isPending])
-
-  // const asyncEmit = ({
-  //   eventName,
-  //   trackedListenEvent,
-  //   sendCompleteEventOnTransitionComplete,
-  //   emitData,
-  //   eventDataCallBack
-  // }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
-  //   console.log('emit data',eventName,emitData)
-  //   socket?.emit(eventName,emitData)
-  //   shouldSendCompleteEvent.current = sendCompleteEventOnTransitionComplete ?? false
-  //   prevIsPending.current = false
-  //   socket?.on(trackedListenEvent,(data:any):void=>{
-  //     startTransition(()=>{
-  //       console.log('transition start!!',data,eventDataCallBack)
-  //       eventDataCallBack?.(data)
-  //     })
-  //     console.log('COMPLETING',eventName)
-  //     socket?.off(trackedListenEvent)
-  //     resolve(data)
-  //   })
-  //   setTimeout(reject, 2000);
-  // })
 
   //this needs to be added on each submitCallBack to trigger the next event
   //or complete the event chain

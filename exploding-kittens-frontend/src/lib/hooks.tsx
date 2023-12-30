@@ -95,15 +95,7 @@ export const usePlayerSocket=()=>{
 
 export const useAsyncEmitSocketEvent = ()=>{
   const { 
-    deck,
-    discardPile,
     socket,
-    turnCount,
-    attackTurns,
-    currentActions,
-    setCurrentActions,
-    setActionPrompt,
-    setAttackTurns
   } = useGameStateContext() || {}
 
   type AsyncEmitProps = {
@@ -122,10 +114,7 @@ export const useAsyncEmitSocketEvent = ()=>{
   const [hasTransitionCompleted,setHasTransitionCompleted] = useState(false)
 
   useEffect(()=>{
-    console.log('action send',currentActions,prevIsPending.current,isPending)
     if (prevIsPending.current && !isPending){
-      console.log('COMPLETE EMIT TRANSITION',transitionCompleteCallback.current)
-      //sendActionComplete(true)
       transitionCompleteCallback.current()
       transitionCompleteCallback.current = ()=>null
       setHasTransitionCompleted(true)
@@ -143,18 +132,20 @@ export const useAsyncEmitSocketEvent = ()=>{
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
     socket?.emit(eventName,emitData)
     setHasTransitionCompleted(false)
+
     if(transitionCompletedCallback) transitionCompleteCallback.current = transitionCompletedCallback
+
     shouldSendCompleteEvent.current = sendCompleteEventOnTransitionComplete ?? false
     prevIsPending.current = false
+
     socket?.on(trackedListenEvent,(data:any):void=>{
       startTransition(()=>{
-        console.log('transition start!!',data,eventDataCallBack)
         eventDataCallBack?.(data)
       })
-      console.log('COMPLETING',eventName)
       socket?.off(trackedListenEvent)
       resolve(data)
     })
+    
     setTimeout(reject, 2000);
   })
 
@@ -195,9 +186,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       ){
         //implement action and start chain
         await actions[currentActions[currentActions.length-1]]()
-        // startActionTransition(()=>{
-        //   actions[currentActions[currentActions.length-1]]()
-        // })
       }
     }
     startChain()
@@ -211,22 +199,15 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
     //set actionComplete true to trigger useEffect that has access to current version of state
     socket?.on('action-complete',()=>{
-      console.log('ACTION COMPLETE EVENT',actionComplete)
       setActionComplete(true)
     })
   },[socket?.id])
 
-  //useEffect listing for action transition to be completed and actionCompleted set to true
-  //(actionCompleted is to wait for responses with prompts)
-  console.log('ACTION COMPLETE',actionComplete)
   useEffect(()=>{
     const removeCompletedAction = async ()=>{
-      console.log('STEP 2',currentActions,actionComplete)
       if(!currentActions?.length) return 
   
-      //if state changes are complete and action state is set to true, start transition on slicing top action
       if(actionComplete){
-        console.log('START')
         await asyncEmit({
           eventName:'current-actions',
           trackedListenEvent:'current-actions',
@@ -242,9 +223,8 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
   },[actionComplete])
 
-  //wait until slicing recent action is complete to start next one
+  //wait until slicing recent action state change is complete to start next one
   useEffect(()=>{
-    console.log('NEXT ACTION IMPL',hasTransitionCompleted)
     const implementNextAction = async ()=>{
       if(!hasTransitionCompleted) return 
 
