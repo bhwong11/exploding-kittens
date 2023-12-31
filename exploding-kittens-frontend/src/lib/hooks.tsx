@@ -114,6 +114,8 @@ export const useAsyncEmitSocketEvent = ()=>{
   const prevIsPending = useRef(false)
   const [hasTransitionCompleted,setHasTransitionCompleted] = useState(false)
 
+  //this only listens to one asyncEmit per hook instance, if you use multiple at the same time
+  //the wrong async emit could be listened
   useEffect(()=>{
     if (prevIsPending.current && !isPending){
       transitionCompleteCallback.current()
