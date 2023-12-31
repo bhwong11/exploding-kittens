@@ -253,6 +253,11 @@ io.on('connection', (socket) => {
     emitToPlayerRoom(io,socket,'current-actions', data)
   })
 
+  socket.on('action-prompt',(data)=>{
+    console.log('action-prompt',data)
+    emitToPlayerRoom(io,socket,'action-prompt', data)
+  })
+
   socket.on('allowed-users',(data)=>{
     console.log('allowed-users',data)
     const playerRoom = Array.from(socket.rooms)[1]

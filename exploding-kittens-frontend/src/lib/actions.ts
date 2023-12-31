@@ -1,6 +1,6 @@
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext } from "@/context/players"
-import { actionTypes, cardTypes,responseActionsTypes } from "@/data"
+import { actionTypes, cardTypes,responseActionsTypes, actionWithPrompts } from "@/data"
 import { useMemo} from "react"
 import { addCardsToHand, getNonLostPlayers, removeCardsFromHand, shuffleArray } from "@/lib/helpers"
 import { useAsyncEmitSocketEvent } from "@/lib/hooks"
@@ -142,9 +142,11 @@ export const useCardActions = ()=>{
     currentActions,
     setCurrentActions,
     setActionPrompt,
-    setAttackTurns
+    setAttackTurns,
+    setTurnCount,
+    setDeck
   } = useGameStateContext() || {}
-  const {players:allPlayers,currentPlayer} = usePlayerContext() || {}
+  const {players:allPlayers,currentPlayer,setPlayers} = usePlayerContext() || {}
   const {asyncEmit} = useAsyncEmitSocketEvent()
   const {discardCards} = useGameActions()
 
@@ -352,59 +354,109 @@ export const useCardActions = ()=>{
   ]
 
   const nopeAction = async () =>{
-    console.log('activate nope',currentActions)
+    console.log('activate nope')
     await asyncEmit({
       eventName:'current-actions',
       trackedListenEvent:'current-actions',
-      sendCompleteEventOnTransitionComplete:true,
       emitData:currentActions?.slice(0,currentActions.length-1) ?? [],
       eventDataCallBack: (data:Actions[])=>{if(setCurrentActions)setCurrentActions(data)},
       transitionCompletedCallback:()=>sendActionComplete(true)
     })
-    //if(setCurrentActions) setCurrentActions(prev=>prev.slice(0,prev.length-1))
-    // sendActionComplete(true)
   }
 
-  const diffuseAction = () =>{
-    //only activate if turn player
-    if(setCurrentActions) setCurrentActions(
-      prev=>prev.filter(prev=>prev!==cardTypes.exploding.type)
-    )
-    if(!setActionPrompt) return 
-    setActionPrompt(diffuseActionPrompts)
+  const diffuseAction = async () =>{
     console.log('diffuse')
+    await asyncEmit({
+      eventName:'current-actions',
+      trackedListenEvent:'current-actions',
+      emitData: currentActions?.filter(currentAction=>currentAction!==cardTypes.exploding.type) ?? [],
+      eventDataCallBack: (data:Actions[])=>{
+        if(setCurrentActions) setCurrentActions(data)
+        if(setActionPrompt) setActionPrompt(diffuseActionPrompts)
+      },
+    })
+  
   }
 
-  const favorAction = ()=>{
-    if(!setActionPrompt) return
-    setActionPrompt(favorActionPrompts)
+  const favorAction = async ()=>{
+    console.log('favor')
+    await asyncEmit({
+      eventName:'action-prompt',
+      trackedListenEvent:'action-prompt',
+      emitData:actionTypes.favor,
+      eventDataCallBack: (data:typeof actionWithPrompts[number])=>{
+        if(!setActionPrompt) return
+        setActionPrompt(actionPromptsData[data])
+      },
+    })
   }
 
-  const multiple2Action = ()=>{
-    if(!setActionPrompt) return
-    setActionPrompt(multiple2ActionPrompts)
+  const multiple2Action = async ()=>{
+    console.log('multiple 2')
+    await asyncEmit({
+      eventName:'action-prompt',
+      trackedListenEvent:'action-prompt',
+      emitData:actionTypes.multiple2,
+      eventDataCallBack: (data:typeof actionWithPrompts[number])=>{
+        if(!setActionPrompt) return
+        setActionPrompt(actionPromptsData[data])
+      },
+    })
   }
 
-  const multiple3Action = ()=>{
-    if(!setActionPrompt) return
-    setActionPrompt(multiple3ActionPrompts)
+  const multiple3Action = async ()=>{
+    console.log('multiple 3')
+    await asyncEmit({
+      eventName:'action-prompt',
+      trackedListenEvent:'action-prompt',
+      emitData:actionTypes.multiple3,
+      eventDataCallBack: (data:typeof actionWithPrompts[number])=>{
+        if(!setActionPrompt) return
+        setActionPrompt(actionPromptsData[data])
+      },
+    })
   }
 
-  const seeTheFutureAction = ()=>{
+  const seeTheFutureAction = async ()=>{
     console.log('see the future')
-    if(!setActionPrompt) return 
-    setActionPrompt(seeTheFutureActionPrompts)
+    await asyncEmit({
+      eventName:'action-prompt',
+      trackedListenEvent:'action-prompt',
+      emitData:actionTypes.seeTheFuture,
+      eventDataCallBack: (data:typeof actionWithPrompts[number])=>{
+        if(!setActionPrompt) return
+        setActionPrompt(actionPromptsData[data])
+      },
+    })
   }
 
-  const attackAction = ()=>{
+  const attackAction = async ()=>{
     console.log('attack action')
-    socket?.emit('attack-turns',(attackTurns??0)+1)
-    socket?.emit('turn-count',(turnCount??0)+1)
-    sendActionComplete(true)
+
+    await asyncEmit({
+      eventName:'attack-turns',
+      trackedListenEvent:'attack-turns',
+      emitData:(attackTurns??0)+1,
+      eventDataCallBack: (data:number)=>{
+        if(!setAttackTurns) return
+        setAttackTurns(data)
+      },
+    })
+
+    await asyncEmit({
+      eventName:'turn-count',
+      trackedListenEvent:'turn-count',
+      emitData:(turnCount??0)+1,
+      eventDataCallBack: (data:number)=>{
+        if(!setTurnCount) return
+        setTurnCount(data)
+      },
+      transitionCompletedCallback:()=>sendActionComplete(true)
+    })
   }
 
-  const explodingAction = ()=>{
-    if(!turnPlayer) return
+  const explodingAction = async ()=>{
+    console.log('exploding')
     const newPlayers = players?.map(player=>{
       if(player.username===turnPlayer?.username){
         return {
@@ -414,29 +466,62 @@ export const useCardActions = ()=>{
       }
       return player
     })
-    socket?.emit('all-players',newPlayers ?? [])
-    discardCards(turnPlayer?.cards ?? [])
-    console.log('exploding')
-    sendActionComplete(true)
+    // socket?.emit('all-players',newPlayers ?? [])
+    // discardCards(turnPlayer?.cards ?? [])
+    // sendActionComplete(true)
+
+    await asyncEmit({
+      eventName:'all-players',
+      trackedListenEvent:'all-players',
+      emitData:newPlayers,
+      eventDataCallBack: (data:Player[])=>{
+        if(!setPlayers) return
+        setPlayers(data)
+        discardCards(turnPlayer?.cards ?? [])
+      },
+      transitionCompletedCallback:()=>sendActionComplete(true)
+    })
   }
 
-  const shuffleAction = ()=>{
-    if(turnPlayer){
-      socket?.emit('deck',shuffleArray(deck ?? []))
-    }
+  const shuffleAction = async ()=>{
     console.log('shuffle')
-    sendActionComplete(true)
+    // socket?.emit('deck',shuffleArray(deck ?? []))
+    // sendActionComplete(true)
+    await asyncEmit({
+      eventName:'deck',
+      trackedListenEvent:'deck',
+      emitData:shuffleArray(deck ?? []),
+      eventDataCallBack: (data:Card[])=>{
+        if(!setDeck) return
+        setDeck(data)
+      },
+      transitionCompletedCallback:()=>sendActionComplete(true)
+    })
   }
 
-  const skip = ()=>{
+  const skip = async ()=>{
     console.log('skip')
-    if(attackTurns){
-      if(setAttackTurns)setAttackTurns(prev=>prev-1)
-      socket?.emit('attack-turns',(attackTurns??0)+1)
-      return
-    }
-    socket?.emit('turn-count',(turnCount??0)+1)
-    sendActionComplete(true)
+    // if(attackTurns){
+    //   if(setAttackTurns)setAttackTurns(prev=>prev-1)
+    //   socket?.emit('attack-turns',(attackTurns??0)+1)
+    //   return
+    // }
+    // socket?.emit('turn-count',(turnCount??0)+1)
+    // sendActionComplete(true)
+
+    await asyncEmit({
+      eventName:attackTurns?'attack-turns':'turn-count',
+      trackedListenEvent:attackTurns?'attack-turns':'turn-count',
+      emitData:((attackTurns || turnCount)??0)+1,
+      eventDataCallBack: (data:number)=>{
+        if(attackTurns){
+          if(setAttackTurns) setAttackTurns(data)
+        }else{
+          if(setTurnCount) setTurnCount(data)
+        }
+      },
+      transitionCompletedCallback:()=>sendActionComplete(true)
+    })
   }
 
   type ActionImpls =  {
@@ -456,13 +541,7 @@ export const useCardActions = ()=>{
     [actionTypes.skip]:skip,
   }
 
-  const actionWithPrompts =[
-    actionTypes.diffuse,
-    actionTypes.multiple2,
-    actionTypes.multiple3,
-    actionTypes.favor,
-    actionTypes.seeTheFuture
-  ] as const 
+
 
   type ActionPrompts ={
       [key in typeof actionWithPrompts[number]]:((previousAnswerObject?:{[key:string]: any})=>ActionPromptData)[]

@@ -101,7 +101,6 @@ export const useAsyncEmitSocketEvent = ()=>{
   type AsyncEmitProps = {
     eventName:keyof ClientToServerEvents
     trackedListenEvent:keyof ServerToClientEvents
-    sendCompleteEventOnTransitionComplete?:boolean
     emitData:any
     eventDataCallBack?:Function
     transitionCompletedCallback?:Function
@@ -110,11 +109,11 @@ export const useAsyncEmitSocketEvent = ()=>{
   const [isPending,startTransition] = useTransition()
   const transitionCompleteCallback = useRef<Function>(()=>null)
   const prevIsPending = useRef(false)
-  const shouldSendCompleteEvent = useRef(true)
   const [hasTransitionCompleted,setHasTransitionCompleted] = useState(false)
 
   useEffect(()=>{
     if (prevIsPending.current && !isPending){
+      console.log('transition happending')
       transitionCompleteCallback.current()
       transitionCompleteCallback.current = ()=>null
       setHasTransitionCompleted(true)
@@ -125,17 +124,16 @@ export const useAsyncEmitSocketEvent = ()=>{
   const asyncEmit = ({
     eventName,
     trackedListenEvent,
-    sendCompleteEventOnTransitionComplete,
     emitData,
     eventDataCallBack,
     transitionCompletedCallback
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
+    console.log('EVENT',eventName,emitData,eventDataCallBack, transitionCompletedCallback)
     socket?.emit(eventName,emitData)
     setHasTransitionCompleted(false)
 
     if(transitionCompletedCallback) transitionCompleteCallback.current = transitionCompletedCallback
 
-    shouldSendCompleteEvent.current = sendCompleteEventOnTransitionComplete ?? false
     prevIsPending.current = false
 
     socket?.on(trackedListenEvent,(data:any):void=>{
@@ -146,19 +144,19 @@ export const useAsyncEmitSocketEvent = ()=>{
       resolve(data)
     })
     
-    setTimeout(reject, 2000);
+    setTimeout(reject, 5000);
   })
 
   return {
     asyncEmit,
-    hasTransitionCompleted:hasTransitionCompleted,
+    hasTransitionCompleted,
     transitionPending:isPending
   }
 }
 
 type UseActivateResponseHandlersProps = {implActions:boolean}
 export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandlersProps={implActions:false})=>{
-  const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
+  const {socket,setCurrentActions,currentActions,turnCount} = useGameStateContext() || {}
   const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
   const {asyncEmit,hasTransitionCompleted} = useAsyncEmitSocketEvent()
   const players = getNonLostPlayers(allPlayers ?? [])
@@ -166,6 +164,8 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
   const [noResponses, setNoResponses] = useState<{username:string}[]>([])
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
+
+  const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
 
   //refresh game state when hand is made
   useEffect(()=>{
@@ -183,9 +183,10 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         noResponses.length>=(allowedUsers?.length || 0) 
         && currentActions?.length
         && implActions
+        && turnPlayer
       ){
         //implement action and start chain
-        await actions[currentActions[currentActions.length-1]]()
+        actions[currentActions[currentActions.length-1]]()
       }
     }
     startChain()
@@ -199,11 +200,14 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
     //set actionComplete true to trigger useEffect that has access to current version of state
     socket?.on('action-complete',()=>{
+      console.log('ACTION COMPLETE EVENT')
       setActionComplete(true)
     })
   },[socket?.id])
 
+  console.log('ACTION COMPLETE',actionComplete)
   useEffect(()=>{
+    console.log('STEP 2', currentActions,actionComplete)
     const removeCompletedAction = async ()=>{
       if(!currentActions?.length) return 
   
@@ -224,7 +228,9 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   },[actionComplete])
 
   //wait until slicing recent action state change is complete to start next one
+  console.log('hasTransitionCompleted',hasTransitionCompleted)
   useEffect(()=>{
+    console.log('STEP 3',hasTransitionCompleted)
     const implementNextAction = async ()=>{
       if(!hasTransitionCompleted) return 
 
@@ -233,7 +239,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         socket?.emit('no-response',[])
         return
       }
-      await actions[currentActions[currentActions.length-1]]()
+      actions[currentActions[currentActions.length-1]]()
     }
 
     implementNextAction()

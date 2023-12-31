@@ -93,6 +93,14 @@ export const actionTypes = {
   multiple3:'multiple-3',
  } as const
 
+ export const actionWithPrompts =[
+  actionTypes.diffuse,
+  actionTypes.multiple2,
+  actionTypes.multiple3,
+  actionTypes.favor,
+  actionTypes.seeTheFuture
+] as const 
+
  export const responseActionsTypes = [actionTypes.diffuse,actionTypes.nope] as const
 
  export const socketEvents = {
