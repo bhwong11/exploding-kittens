@@ -23,7 +23,7 @@ const Room = ({params}:RoomParams)=>{
   const router = useRouter()
   const {players,currentPlayer,setCurrentPlayer} = usePlayerContext() || {}
 
-  const {deck,discardPile} = useGameStateContext() || {}
+  const {deck,discardPile, socket} = useGameStateContext() || {}
   const {winner} = useTurns() || {}
 
   const [users,setUsers] = useState<User | null>(null)
@@ -88,6 +88,12 @@ const Room = ({params}:RoomParams)=>{
         </button>
         <button onClick={clearGameState} className="btn btn-blue">
             clear gameState
+        </button>
+        <button onClick={()=>{socket?.emit('save-room')}} className="btn btn-blue">
+            save room
+        </button>
+        <button onClick={()=>{socket?.emit('get-saved-room')}} className="btn btn-blue">
+            get saved room
         </button>
       </div>
       <OtherPlayers/>

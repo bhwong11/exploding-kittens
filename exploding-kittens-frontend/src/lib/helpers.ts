@@ -70,3 +70,7 @@ export const authenticate = async () => {
 }
 
 export const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+
+export const isObjKey = <T extends object>(key: PropertyKey, obj: T): key is keyof T =>{
+  return key in obj;
+}

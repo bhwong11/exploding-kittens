@@ -16,7 +16,7 @@ const create = async (req,res)=>{
     await newRoom.save()
     res.json(newRoom).status(200)
   }catch(e){
-    res.json({error:`error processing on /room post route ${e}`}).status(500)
+    res.json({error:`error processing on /rooms post route ${e}`}).status(500)
   }
 }
 

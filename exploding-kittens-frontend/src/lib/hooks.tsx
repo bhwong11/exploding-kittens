@@ -4,7 +4,7 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
-import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
+import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
 //show prompt hook
 
 export const usePlayerSocket=()=>{
@@ -29,6 +29,7 @@ export const usePlayerSocket=()=>{
     }
 
     socket.on('all-players',data=>{
+      console.log('ALL PLAYERS',data)
       if(setPlayers)setPlayers(data)
     })
 
@@ -43,6 +44,14 @@ export const usePlayerSocket=()=>{
 
     socket.on('current-actions',data=>{
       if(setCurrentActions) setCurrentActions(data)
+    })
+
+    socket?.on('save-room',(data)=>{
+      console.log('save-room',data)
+    })
+
+    socket?.on('get-saved-room',(data)=>{
+      console.log('get-saved-room',data)
     })
 
     return () => {
@@ -160,7 +169,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
   const {asyncEmit,hasTransitionCompleted} = useAsyncEmitSocketEvent()
   const players = getNonLostPlayers(allPlayers ?? [])
-  const {discardCards} = useGameActions()
+  const {discardCards,allowedUserActionsRestrictions} = useGameActions()
 
   const [noResponses, setNoResponses] = useState<{username:string}[]>([])
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
@@ -297,6 +306,10 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       ?.map(p=>p.username)
       .filter(username=>username!==currentPlayer?.username) || []
     )
+
+    if(action && isObjKey(action,allowedUserActionsRestrictions)){
+      newAllowedUsers = allowedUserActionsRestrictions[action]
+    }
     
     //add to gameActions hooks
     if(action === actionTypes.exploding){

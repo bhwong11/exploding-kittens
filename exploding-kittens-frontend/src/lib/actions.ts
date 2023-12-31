@@ -119,13 +119,19 @@ export const useGameActions = ()=>{
     && isActionValidFromCards([card])
   )) ?? [],[playerCards?.length, isActionValidFromCards])
 
+  const allowedUserActionsRestrictions = {
+    [actionTypes.exploding]:currentPlayer?.username?[currentPlayer.username]:[],
+    [actionTypes.diffuse]:[]
+  }
+
   const actions  = {
     drawCard,
     setPlayerHand,
     getPlayerCurrentHand,
     discardCards,
     isActionValidFromCards,
-    validResponseCards
+    validResponseCards,
+    allowedUserActionsRestrictions
   }
 
   return actions
@@ -466,9 +472,6 @@ export const useCardActions = ()=>{
       }
       return player
     })
-    // socket?.emit('all-players',newPlayers ?? [])
-    // discardCards(turnPlayer?.cards ?? [])
-    // sendActionComplete(true)
 
     await asyncEmit({
       eventName:'all-players',
@@ -485,8 +488,7 @@ export const useCardActions = ()=>{
 
   const shuffleAction = async ()=>{
     console.log('shuffle')
-    // socket?.emit('deck',shuffleArray(deck ?? []))
-    // sendActionComplete(true)
+
     await asyncEmit({
       eventName:'deck',
       trackedListenEvent:'deck',
@@ -501,13 +503,6 @@ export const useCardActions = ()=>{
 
   const skip = async ()=>{
     console.log('skip')
-    // if(attackTurns){
-    //   if(setAttackTurns)setAttackTurns(prev=>prev-1)
-    //   socket?.emit('attack-turns',(attackTurns??0)+1)
-    //   return
-    // }
-    // socket?.emit('turn-count',(turnCount??0)+1)
-    // sendActionComplete(true)
 
     await asyncEmit({
       eventName:attackTurns?'attack-turns':'turn-count',
