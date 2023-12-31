@@ -1,10 +1,11 @@
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
-import { useActivateResponseHandlers, useTurns } from "@/lib/hooks"
+import { useActivateResponseHandlers, useTurns, usePlayerSocket } from "@/lib/hooks"
 import { useGameActions } from "@/lib/actions"
-import { useState, useEffect,lazy, Suspense,memo, useTransition } from "react"
+import { useState, useEffect,lazy, Suspense,memo} from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
+import { isDevMode } from "@/lib/helpers"
 
 const ResponseAction = lazy(()=>import("@/app/[roomNumber]/ResponseAction"))
 const ActionPrompt = lazy(()=>import("@/app/[roomNumber]/ActionPrompt"))
@@ -27,6 +28,7 @@ const Hand = ()=>{
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
   const {attemptActivate} = useActivateResponseHandlers()
   const {isActionValidFromCards,validResponseCards} = useGameActions()
+  const {isAllPlayersActive} = usePlayerSocket()
 
   const isPlayerTurn = turnPlayer?.username ===currentPlayer?.username && !!turnPlayer
   const singleCardActionType = Object.values(actionTypes).find(aType=>aType===selectedCards[0]?.type)
@@ -64,6 +66,7 @@ const Hand = ()=>{
   const disableActions = (
     !isActionValidFromCards(selectedCards)
     || !isPlayerTurn
+    || !isAllPlayersActive
   )
 
   const cardActivateHandler = ()=>{
@@ -110,6 +113,20 @@ const Hand = ()=>{
       ))}
     </div>
     <div className="border border-black">
+
+      {!isAllPlayersActive && (
+        <div className="bg-red-300">
+          Not all players active game paused
+        </div>
+      )}
+
+      {isDevMode && (
+        <div>
+          all players active: {JSON.stringify(isAllPlayersActive)}
+        </div>
+        )
+      }
+
       <p>turn count: {turnCount}</p>
       <p>attack: {attackTurns}</p>
       <p>turn player: {turnPlayer?.username}</p>

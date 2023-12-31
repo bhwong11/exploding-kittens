@@ -1,6 +1,7 @@
 import React,{ useEffect, useState } from "react"
 import { useGameStateContext } from "@/context/gameState"
 import { usePlayerContext} from "@/context/players"
+import { usePlayerSocket } from "@/lib/hooks"
 
 
 const ActionPrompt = ()=>{
@@ -8,6 +9,7 @@ const ActionPrompt = ()=>{
   const {currentPlayer} = usePlayerContext() || {}
   const [responseCount,setResponseCount] = useState<number>(0)
   const [previousSubmitData,setPreviousSubmitData] = useState<{[key:string]:any}>({})
+  const {isAllPlayersActive} = usePlayerSocket()
 
   const currentActionPrompt = actionPrompt?.[responseCount]?.(previousSubmitData)
 
@@ -36,6 +38,13 @@ const ActionPrompt = ()=>{
     <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
       <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div className="flex flex-col items-center rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+        
+        {!isAllPlayersActive && (
+          <div className="bg-red-300">
+            Not all players active game paused
+          </div>
+        )}
+
         <form  className="flex flex-col w-fit" onSubmit={(e)=>{
           e.preventDefault()
           const formData = new FormData(e.currentTarget)
@@ -53,7 +62,7 @@ const ActionPrompt = ()=>{
             </React.Fragment>
           ))}
 
-          <button type="submit" className="btn btn-blue">Submit/Confirm</button>
+          <button type="submit" className="btn btn-blue" disabled={!isAllPlayersActive}>Submit/Confirm</button>
         </form>
         </div>
       </div>

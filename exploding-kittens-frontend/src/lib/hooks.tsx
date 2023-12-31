@@ -55,6 +55,8 @@ export const usePlayerSocket=()=>{
     return players?.map(player=>player.username).includes(username) ?? false
   }
 
+  const isAllPlayersActive = players?.every(player=>player.active)
+
   const clearPlayers= ():void=>{
     currentSocket?.emit('clear-players')
   }
@@ -89,7 +91,8 @@ export const usePlayerSocket=()=>{
     joinRoom,
     isPlayerInRoom,
     clearPlayers,
-    clearGameState
+    clearGameState,
+    isAllPlayersActive
   }
 }
 

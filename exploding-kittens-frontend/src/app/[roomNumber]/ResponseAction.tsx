@@ -1,6 +1,7 @@
 "use client"
 import {
   useActivateResponseHandlers,
+  usePlayerSocket
 } from "@/lib/hooks"
 import { useGameActions } from "@/lib/actions"
 import { actionTypes } from "@/data"
@@ -12,6 +13,7 @@ const ResponseAction = ()=>{
   const {validResponseCards} =  useGameActions()
   const {currentActions} =  useGameStateContext() || {}
   const {currentPlayer} = usePlayerContext() || {}
+  const {isAllPlayersActive} = usePlayerSocket()
 
   const {
     attemptActivate,
@@ -61,14 +63,22 @@ const ResponseAction = ()=>{
               {validResponseCards.map(card=>(
                 <div key={`response-action-${card.id}`} className="border border-black flex flex-col">
                   {card.type} - {card.id}
-                  <button className="btn btn-blue" onClick={()=>responseCardClickHandler(card)}>
+                  <button
+                    className="btn btn-blue"
+                    onClick={()=>responseCardClickHandler(card)}
+                    disabled={!isAllPlayersActive}
+                  >
                     activate
                   </button>
                 </div>)
               )}
             </div>
             <div>
-              <button className="btn btn-blue" onClick={()=>sendNoResponse(currentPlayer?.username)}>
+              <button
+                className="btn btn-blue"
+                onClick={()=>sendNoResponse(currentPlayer?.username)}
+                disabled={!isAllPlayersActive}
+              >
                 no response
               </button>
             </div>
