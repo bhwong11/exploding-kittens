@@ -29,7 +29,6 @@ export const usePlayerSocket=()=>{
     }
 
     socket.on('all-players',data=>{
-      console.log('ALL PLAYERS',data)
       if(setPlayers)setPlayers(data)
     })
 
@@ -44,14 +43,6 @@ export const usePlayerSocket=()=>{
 
     socket.on('current-actions',data=>{
       if(setCurrentActions) setCurrentActions(data)
-    })
-
-    socket?.on('save-room',(data)=>{
-      console.log('save-room',data)
-    })
-
-    socket?.on('get-saved-room',(data)=>{
-      console.log('get-saved-room',data)
     })
 
     return () => {
@@ -122,7 +113,6 @@ export const useAsyncEmitSocketEvent = ()=>{
 
   useEffect(()=>{
     if (prevIsPending.current && !isPending){
-      console.log('transition happending')
       transitionCompleteCallback.current()
       transitionCompleteCallback.current = ()=>null
       setHasTransitionCompleted(true)
@@ -137,7 +127,6 @@ export const useAsyncEmitSocketEvent = ()=>{
     eventDataCallBack,
     transitionCompletedCallback
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
-    console.log('EVENT',eventName,emitData,eventDataCallBack, transitionCompletedCallback)
     socket?.emit(eventName,emitData)
     setHasTransitionCompleted(false)
 
@@ -209,14 +198,11 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
     //set actionComplete true to trigger useEffect that has access to current version of state
     socket?.on('action-complete',()=>{
-      console.log('ACTION COMPLETE EVENT')
       setActionComplete(true)
     })
   },[socket?.id])
 
-  console.log('ACTION COMPLETE',actionComplete)
   useEffect(()=>{
-    console.log('STEP 2', currentActions,actionComplete)
     const removeCompletedAction = async ()=>{
       if(!currentActions?.length) return 
   
@@ -237,9 +223,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   },[actionComplete])
 
   //wait until slicing recent action state change is complete to start next one
-  console.log('hasTransitionCompleted',hasTransitionCompleted)
   useEffect(()=>{
-    console.log('STEP 3',hasTransitionCompleted)
     const implementNextAction = async ()=>{
       if(!hasTransitionCompleted) return 
 

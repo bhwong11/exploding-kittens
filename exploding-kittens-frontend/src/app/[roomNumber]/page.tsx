@@ -11,6 +11,7 @@ import {
 import { authenticate,isDevMode } from "@/lib/helpers"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
+import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
 
 
 type RoomParams = {
@@ -89,12 +90,13 @@ const Room = ({params}:RoomParams)=>{
         <button onClick={clearGameState} className="btn btn-blue">
             clear gameState
         </button>
-        <button onClick={()=>{socket?.emit('save-room')}} className="btn btn-blue">
+        {/* <button onClick={()=>{socket?.emit('save-room')}} className="btn btn-blue">
             save room
         </button>
         <button onClick={()=>{socket?.emit('get-saved-room')}} className="btn btn-blue">
             get saved room
-        </button>
+        </button> */}
+        <SaveRefreshGame/>
       </div>
       <OtherPlayers/>
       <div className="border border-black">
