@@ -8,6 +8,7 @@ import routes from './routes/index.js'
 import { generateRoutes, emitToPlayerRoom } from './helpers/index.js'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import Room from './models/Room.js'
 
 dotenv.config()
 
@@ -47,7 +48,7 @@ const roomMax = 4
 const disconnectTimeout = 1000 * 60 * 10
 const timeoutIds = {}
 
-let rooms = {}
+export let rooms = {}
 
 io.on('connection', (socket) => {
   console.log('a player connected',socket.id);
@@ -253,6 +254,11 @@ io.on('connection', (socket) => {
     emitToPlayerRoom(io,socket,'current-actions', data)
   })
 
+  socket.on('action-prompt',(data)=>{
+    console.log('action-prompt',data)
+    emitToPlayerRoom(io,socket,'action-prompt', data)
+  })
+
   socket.on('allowed-users',(data)=>{
     console.log('allowed-users',data)
     const playerRoom = Array.from(socket.rooms)[1]
@@ -287,11 +293,11 @@ io.on('connection', (socket) => {
         rooms[playerRoom].gameState.actionPromptIndex+1
       )
       rooms[playerRoom].gameState.actionPromptFormObject = data.formObject
+      emitToPlayerRoom(io,socket,'next-action-response', {
+        ...data,
+        actionPromptIndex:rooms[playerRoom].gameState.actionPromptIndex
+      })
     }
-    emitToPlayerRoom(io,socket,'next-action-response', {
-      ...data,
-      actionPromptIndex:rooms[playerRoom].gameState.actionPromptIndex
-    })
   })
 
   socket.on('refresh-game-state',()=>{
@@ -315,6 +321,107 @@ io.on('connection', (socket) => {
         }
       }
       emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom]?.gameState)
+    }
+  })
+
+  socket.on('save-room',async ()=>{
+    console.log('save-room')
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(!rooms[playerRoom]?.gameState || !rooms[playerRoom]?.players){
+      emitToPlayerRoom(io,socket,'get-saved-room', {
+        success: false,
+        message:`room not populated yet`
+      })
+      return
+    }
+
+    try{
+      const updatedRoom = await Room.findOneAndUpdate(
+        {roomNumber:playerRoom},
+        {
+          ...rooms[playerRoom].gameState,
+          players: rooms[playerRoom].players
+        },
+        {new:true}
+      )
+      
+      if(!updatedRoom){
+        emitToPlayerRoom(io,socket,'save-room', {
+          success: false,
+          message:`room for socket not found ${playerRoom}`
+        })
+        return
+      }
+
+      emitToPlayerRoom(io,socket,'save-room', {
+        success: true,
+        ...updatedRoom.toObject()
+      })
+
+    }catch(err){
+      emitToPlayerRoom(io,socket,'save-room', {
+        success: false,
+        message:err
+      })
+    }
+  })
+
+  socket.on('get-saved-room',async ()=>{
+    console.log('get-saved-room')
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(!rooms[playerRoom]?.gameState || !rooms[playerRoom]?.players){
+      emitToPlayerRoom(io,socket,'get-saved-room', {
+        success: false,
+        message:`room not populated yet`
+      })
+      return
+    }
+
+    try{
+      const existingRoom = await Room.findOne(
+        {roomNumber:playerRoom}
+      )
+
+      if(!existingRoom){
+        emitToPlayerRoom(io,socket,'get-saved-room', {
+          success: false,
+          message:`room for socket not found ${playerRoom}`
+        })
+        return
+      }
+
+      const existingRoomObj = existingRoom._doc
+
+      rooms[playerRoom].gameState = {
+        deck:existingRoomObj.deck,
+        discardPile:existingRoomObj.discardPile,
+        turnCount:existingRoomObj.turnCount,
+        attackTurns: existingRoomObj.attackTurns,
+        //current action data
+        currentActions:existingRoomObj.currentActions,
+        noResponses:existingRoomObj.noResponses,
+        allowedUsers:existingRoomObj.allowedUsers,
+        //action prompt Data
+        actionPromptFormObject:existingRoomObj.actionPromptFormObject,
+        actionPromptIndex:existingRoomObj.actionPromptIndex,
+      }
+
+      const players = existingRoomObj.players.map(player=>({
+        ...player.toObject(),
+        active:rooms[playerRoom].players.find(p=>p.username===player.username)?.active ?? false
+        })
+      )
+
+      rooms[playerRoom].players = players
+
+      emitToPlayerRoom(io,socket,'refresh-game-state', rooms[playerRoom].gameState)
+      emitToPlayerRoom(io,socket,'all-players', players)
+
+    }catch(err){
+      emitToPlayerRoom(io,socket,'get-saved-room', {
+        success: false,
+        message:`an error occured on get-saved-room action${err}`
+      })
     }
   })
 })

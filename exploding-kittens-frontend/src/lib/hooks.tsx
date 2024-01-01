@@ -4,7 +4,7 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
-import { shuffleArray, getNonLostPlayers } from "@/lib/helpers"
+import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
 //show prompt hook
 
 export const usePlayerSocket=()=>{
@@ -28,17 +28,21 @@ export const usePlayerSocket=()=>{
       setSocket(socket)
     }
 
-    socket.on('all-players',(data)=>{
+    socket.on('all-players',data=>{
       if(setPlayers)setPlayers(data)
     })
 
     socket.on('refresh-game-state',data=>{
-      console.log('DATA',data)
+      console.log('refresh-game-state-data',data)
       if(setCurrentActions) setCurrentActions(data.currentActions)
       if(setAttackTurns) setAttackTurns(data.attackTurns)
       if(setDeck) setDeck(data.deck)
       if(setDiscardPile) setDiscardPile(data.discardPile)
       if(setTurnCount) setTurnCount(data.turnCount)
+    })
+
+    socket.on('current-actions',data=>{
+      if(setCurrentActions) setCurrentActions(data)
     })
 
     return () => {
@@ -50,6 +54,8 @@ export const usePlayerSocket=()=>{
   const isPlayerInRoom = (username:string):boolean=>{
     return players?.map(player=>player.username).includes(username) ?? false
   }
+
+  const isAllPlayersActive = players?.every(player=>player.active)
 
   const clearPlayers= ():void=>{
     currentSocket?.emit('clear-players')
@@ -85,19 +91,84 @@ export const usePlayerSocket=()=>{
     joinRoom,
     isPlayerInRoom,
     clearPlayers,
-    clearGameState
+    clearGameState,
+    isAllPlayersActive
+  }
+}
+
+export const useAsyncEmitSocketEvent = ()=>{
+  const { 
+    socket,
+  } = useGameStateContext() || {}
+
+  type AsyncEmitProps = {
+    eventName:keyof ClientToServerEvents
+    trackedListenEvent:keyof ServerToClientEvents
+    emitData:any
+    eventDataCallBack?:Function
+    transitionCompletedCallback?:Function
+  }
+
+  const [isPending,startTransition] = useTransition()
+  const transitionCompleteCallback = useRef<Function>(()=>null)
+  const prevIsPending = useRef(false)
+  const [hasTransitionCompleted,setHasTransitionCompleted] = useState(false)
+
+  //this only listens to one asyncEmit per hook instance, if you use multiple at the same time
+  //the wrong async emit could be listened
+  useEffect(()=>{
+    if (prevIsPending.current && !isPending){
+      transitionCompleteCallback.current()
+      transitionCompleteCallback.current = ()=>null
+      setHasTransitionCompleted(true)
+    }
+    prevIsPending.current = isPending
+  },[isPending])
+
+  const asyncEmit = ({
+    eventName,
+    trackedListenEvent,
+    emitData,
+    eventDataCallBack,
+    transitionCompletedCallback
+  }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
+    socket?.emit(eventName,emitData)
+    setHasTransitionCompleted(false)
+
+    if(transitionCompletedCallback) transitionCompleteCallback.current = transitionCompletedCallback
+
+    prevIsPending.current = false
+
+    socket?.on(trackedListenEvent,(data:any):void=>{
+      startTransition(()=>{
+        eventDataCallBack?.(data)
+      })
+      socket?.off(trackedListenEvent)
+      resolve(data)
+    })
+    
+    setTimeout(reject, 5000);
+  })
+
+  return {
+    asyncEmit,
+    hasTransitionCompleted,
+    transitionPending:isPending
   }
 }
 
 type UseActivateResponseHandlersProps = {implActions:boolean}
 export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandlersProps={implActions:false})=>{
-  const {socket,setCurrentActions,currentActions} = useGameStateContext() || {}
+  const {socket,setCurrentActions,currentActions,turnCount} = useGameStateContext() || {}
   const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
+  const {asyncEmit,hasTransitionCompleted} = useAsyncEmitSocketEvent()
   const players = getNonLostPlayers(allPlayers ?? [])
-  const {discardCards} = useGameActions()
+  const {discardCards,allowedUserActionsRestrictions} = useGameActions()
 
   const [noResponses, setNoResponses] = useState<{username:string}[]>([])
   const [allowedUsers, setAllowedUsers] = useState<string[]>([])
+
+  const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
 
   //refresh game state when hand is made
   useEffect(()=>{
@@ -110,16 +181,18 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
   //this will mostly be a bunch of nopes cancelling each other out and on other action at the bottom
   useEffect(()=>{
     //if all players that can respond respond with no response, implement all actions in "chain"
-    if(
-      noResponses.length>=(allowedUsers?.length || 0) 
-      && currentActions?.length
-      && implActions
-    ){
-      //implement action and start chain
-      startActionTransition(()=>{
+    const startChain = async () =>{
+      if(
+        noResponses.length>=(allowedUsers?.length || 0) 
+        && currentActions?.length
+        && implActions
+        && turnPlayer
+      ){
+        //implement action and start chain
         actions[currentActions[currentActions.length-1]]()
-      })
+      }
     }
+    startChain()
     
   },[noResponses?.length,allowedUsers?.length])
 
@@ -134,50 +207,42 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     })
   },[socket?.id])
 
-  const [pendingSliceAction,startSliceActionTransition]= useTransition()
-  const [isPendingAction,startActionTransition]= useTransition()
-  const prevSliceActionPending = useRef(false)
-  const prevActionPending = useRef(false)
-  const actionPendingTransitionCompleted = useRef(false)
-
-  //useEffect listing for action transition to be completed and actionCompleted set to true
-  //(actionCompleted is to wait for responses with prompts)
   useEffect(()=>{
-    if(!currentActions?.length) return 
-
-    //set true if action transition(all state changes from action immediately taking place), are completed
-    if(prevActionPending.current && !isPendingAction){
-      actionPendingTransitionCompleted.current = true
+    const removeCompletedAction = async ()=>{
+      if(!currentActions?.length) return 
+  
+      if(actionComplete){
+        await asyncEmit({
+          eventName:'current-actions',
+          trackedListenEvent:'current-actions',
+          emitData:currentActions?.slice(0,currentActions.length-1) ?? [],
+          eventDataCallBack: (data:Actions[])=>{
+            if(setCurrentActions)setCurrentActions(data)
+            setActionComplete(false)
+          },
+        })
+      }
     }
+    removeCompletedAction()
 
-    //if state changes are complete and action state is set to true, start transition on slicing top action
-    if(actionPendingTransitionCompleted.current && actionComplete){
-      startSliceActionTransition(()=>{
-        if(setCurrentActions)setCurrentActions(prev=>prev.slice(0,prev.length-1))
-        setActionComplete(false)
-        socket?.emit('current-actions',currentActions.slice(0,currentActions.length-1))
-      })
-    }
-    prevActionPending.current = isPendingAction
+  },[actionComplete])
 
-  },[actionComplete,isPendingAction])
-
-  //wait until slicing recent action is complete to start next one
+  //wait until slicing recent action state change is complete to start next one
   useEffect(()=>{
-    if(prevSliceActionPending.current && !pendingSliceAction){
-      actionPendingTransitionCompleted.current = false
+    const implementNextAction = async ()=>{
+      if(!hasTransitionCompleted) return 
+
       if(!currentActions?.length) {
         socket?.emit('allowed-users',[])
         socket?.emit('no-response',[])
-        setActionComplete(false)
         return
       }
-      startActionTransition(()=>{
-        actions[currentActions[currentActions.length-1]]()
-      })
+      actions[currentActions[currentActions.length-1]]()
     }
-    prevSliceActionPending.current = pendingSliceAction
-  },[pendingSliceAction])
+
+    implementNextAction()
+
+  },[hasTransitionCompleted])
 
 
   useEffect(()=>{
@@ -230,6 +295,10 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       ?.map(p=>p.username)
       .filter(username=>username!==currentPlayer?.username) || []
     )
+
+    if(action && isObjKey(action,allowedUserActionsRestrictions)){
+      newAllowedUsers = allowedUserActionsRestrictions[action]
+    }
     
     //add to gameActions hooks
     if(action === actionTypes.exploding){

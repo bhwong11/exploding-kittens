@@ -3,6 +3,7 @@ export {}
 declare global{
   type cardTypesConst = typeof import('../data/index').cardTypes
   type actionTypesConst = typeof import('../data/index').actionTypes
+  type actionsWithPromptsConst = typeof import('../data/index').actionWithPrompts
   type User = {
     wins?: number
     rooms?: []
@@ -61,7 +62,16 @@ declare global{
       attackTurns: number,
     }) => void
     ['action-complete']:() => void
+    ['get-saved-room']:(arg:{
+      success:string
+      message:string
+    }) => void
+    ['save-room']:(arg:{
+      success:string
+      message:string
+    }) => void
     ['allowed-users']:(arg:string[]) => void
+    ['action-prompt']:(arg:ActionsWithPromptsConst[number]) => void
     ['clear-current-actions']:() => void
     ['new-player']: (arg:{username:string}) => void
     ['all-players']: (arg:Player[]) => void
@@ -92,6 +102,9 @@ declare global{
     ['clear-game-state']: () => void
     ['refresh-game-state']:() => void
     ['action-complete']:() => void
+    ['save-room']:() => void
+    ['get-saved-room']:() => void
+    ['action-prompt']:(arg:ActionsWithPromptsConst[number]) => void
     ['clear-current-actions']:() => void
     ['deck']: (arg:Card[]) => void
     ['error']: (arg:string) => void
