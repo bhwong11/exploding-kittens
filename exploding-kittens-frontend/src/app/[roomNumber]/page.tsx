@@ -32,7 +32,7 @@ const Room = ({params}:RoomParams)=>{
 
   const {createGameAssets} = useInitGame()
 
-  const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket()
+  const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket({initSocket:true})
 
   useEffect(()=>{
     //add to .env

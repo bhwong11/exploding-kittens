@@ -5,9 +5,9 @@ import { useGameStateContext } from "@/context/gameState"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
 import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
-//show prompt hook
 
-export const usePlayerSocket=()=>{
+type UsePlayerSocketProps = {initSocket:boolean}
+export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:false})=>{
   const {
     setSocket,
     socket:currentSocket,
@@ -23,6 +23,7 @@ export const usePlayerSocket=()=>{
 
   useEffect(()=>{
     //add to .env
+    if(!initSocket) return 
     socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
     if(setSocket){
       setSocket(socket)
