@@ -404,7 +404,7 @@ export const useInitGame = () => {
 
   const createHands = ()=>{
     const newPlayers = [...(players??[])]
-    for (let player of players || []){
+    for (let player of newPlayers || []){
       const hand:Card[] = []
       const diffuseCard:Card | undefined = diffuseCards.pop()
 
@@ -415,11 +415,8 @@ export const useInitGame = () => {
         if(newCard) hand.push(newCard)
       }
 
-      //const newPlayers = [...(players??[])]
-      const currPlayerIndx = players?.findIndex(p=>p.username === player.username)
-      if((currPlayerIndx || currPlayerIndx===0) && currPlayerIndx!==-1){
-        newPlayers[currPlayerIndx].cards = hand
-      }
+      player.cards = hand
+      
     }
     socket?.emit('all-players',newPlayers)
   }
