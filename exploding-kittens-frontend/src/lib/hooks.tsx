@@ -254,7 +254,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
       setCurrentActions(data.actions)
       setNoResponses([])
-      //useEffect on action hook that sets a context var that it's complete
       //set response restrictions
       setAllowedUsers(data.newAllowedUsers)
     })
