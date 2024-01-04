@@ -342,12 +342,12 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     }
     
     //add to gameActions hooks
-    if(action === actionTypes.exploding){
-      newAllowedUsers = currentPlayer?.username?[currentPlayer.username]:[]
-    }
-    if(action === actionTypes.diffuse){
-      newAllowedUsers = []
-    }
+    // if(action === actionTypes.exploding){
+    //   newAllowedUsers = currentPlayer?.username?[currentPlayer.username]:[]
+    // }
+    // if(action === actionTypes.diffuse){
+    //   newAllowedUsers = []
+    // }
     discardCards(cards,cardId,cardType)
 
     socket?.emit('activate-attempt',{
