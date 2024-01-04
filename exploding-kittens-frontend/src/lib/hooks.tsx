@@ -5,9 +5,9 @@ import { useGameStateContext } from "@/context/gameState"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
 import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
-//show prompt hook
 
-export const usePlayerSocket=()=>{
+type UsePlayerSocketProps = {initSocket:boolean}
+export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:false})=>{
   const {
     setSocket,
     socket:currentSocket,
@@ -23,6 +23,7 @@ export const usePlayerSocket=()=>{
 
   useEffect(()=>{
     //add to .env
+    if(!initSocket) return 
     socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
     if(setSocket){
       setSocket(socket)
@@ -253,7 +254,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
 
       setCurrentActions(data.actions)
       setNoResponses([])
-      //useEffect on action hook that sets a context var that it's complete
       //set response restrictions
       setAllowedUsers(data.newAllowedUsers)
     })
@@ -403,7 +403,7 @@ export const useInitGame = () => {
 
   const createHands = ()=>{
     const newPlayers = [...(players??[])]
-    for (let player of players || []){
+    for (let player of newPlayers || []){
       const hand:Card[] = []
       const diffuseCard:Card | undefined = diffuseCards.pop()
 
@@ -414,11 +414,8 @@ export const useInitGame = () => {
         if(newCard) hand.push(newCard)
       }
 
-      //const newPlayers = [...(players??[])]
-      const currPlayerIndx = players?.findIndex(p=>p.username === player.username)
-      if((currPlayerIndx || currPlayerIndx===0) && currPlayerIndx!==-1){
-        newPlayers[currPlayerIndx].cards = hand
-      }
+      player.cards = hand
+      
     }
     socket?.emit('all-players',newPlayers)
   }
