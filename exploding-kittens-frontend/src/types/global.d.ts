@@ -16,7 +16,7 @@ declare global{
     roomNumber?: string
     createdAt?: string
     updatedAt?: string
-    users?: User[]
+    users?: Player[]
   }
   type CardType = cardTypesConst[keyof cardTypesConst]["type"]
   type Card = {
@@ -85,6 +85,7 @@ declare global{
       formObject:{[key:string]:any}
       complete:boolean
     }) => void
+    ['new-room']: (arg:Room[]) => void
   }
   
   interface ClientToServerEvents {
@@ -115,5 +116,6 @@ declare global{
       formObject:{[key:string]:any}
       complete:boolean
     }) => void
+    ['new-room']: (arg:Room[]) => void
   }
 }
