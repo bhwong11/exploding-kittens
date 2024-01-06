@@ -4,13 +4,22 @@ import User from "../models/User.js";
 const all = async (req,res)=>{
   try{
     const users = await User.find().populate('rooms');
-    res.json(users).status(200)
+    res.status(200).json(users)
   }catch(e){
-    res.json({error:`error processing on /users get route ${e}`}).status(500)
+    res.status(500).json({error:`error processing on /users get route ${e}`})
   }
 }
 
-const userByUsername = async (req,res)=>{
+const userRankings = async (req,res)=>{
+  try{
+    const users = await User.find();
+    res.status(200).json(users)
+  }catch(e){
+    res.status(500).json({error:`error processing on /users get route ${e}`})
+  }
+}
+
+const userWithRankingByUsername = async (req,res)=>{
   try{
     const user = User.find({username:req.params.username})
     if(!user){
@@ -46,5 +55,5 @@ const create = async (req,res)=>{
 export default {
   all,
   create,
-  userByUsername
+  userWithRankingByUsername
 }

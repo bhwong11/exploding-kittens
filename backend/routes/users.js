@@ -4,7 +4,7 @@ import userControllers from "../controllers/users.js";
 const router = express.Router()
 
 router.get('/', userControllers.all)
-router.get('/:username', userControllers.userByUsername)
+router.get('/rankings/:username', userControllers.userWithRankingByUsername)
 router.post('/', userControllers.create)
 
 export default router

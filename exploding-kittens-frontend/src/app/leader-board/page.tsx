@@ -1,6 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient, useQuery } from '@tanstack/react-query'
-import LeaderBoardList from '@/app/leader-board/list'
-import HydrateWrapper from '@/app/hydrations/hydrate-client'
+import LeaderBoardList from '@/app/(components)/LeaderBoardList'
 
 
 const LeaderBoard = async ()=>{
@@ -14,13 +13,13 @@ const LeaderBoard = async ()=>{
 
 
   const dehydratedState = dehydrate(queryClient)
-  console.log('DEHYRDARTWD',JSON.stringify(dehydratedState))
 
   return (
-  <HydrationBoundary state={JSON.parse(JSON.stringify(dehydratedState))}>
-    <LeaderBoardList/>
-  </HydrationBoundary>
-  //<LeaderBoardList/>
+    <>
+    <HydrationBoundary state={dehydratedState}>
+      <LeaderBoardList/>
+    </HydrationBoundary>
+    </>
   )
 }
 
