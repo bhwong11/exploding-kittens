@@ -12,6 +12,7 @@ import { authenticate,isDevMode } from "@/lib/helpers"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
+import { useQuery } from "@tanstack/react-query"
 
 
 type RoomParams = {
@@ -42,6 +43,13 @@ const Room = ({params}:RoomParams)=>{
         setUsers(data)
       })
   },[])
+
+  const {data:usersData,isLoading,isStale} = useQuery({
+    queryKey:['all-users'],
+    queryFn: ()=>fetch('http://localhost:3000/users')
+  })
+
+  console.log('data',usersData,isLoading,isStale)
 
   useEffect(() => {
     if(isDevMode) return

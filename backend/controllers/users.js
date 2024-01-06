@@ -10,6 +10,18 @@ const all = async (req,res)=>{
   }
 }
 
+const userByUsername = async (req,res)=>{
+  try{
+    const user = User.find({username:req.params.username})
+    if(!user){
+      res.json(`error: no user with username: ${req.params.username} found`).status(400)
+    }
+    res.json(user).status(200)
+  }catch(err){
+    res.json({error:`error processing on /users/:id get route ${e}`}).status(500)
+  }
+}
+
 const create = async (req,res)=>{
   try{
     const { username, password, email } = req.body
@@ -33,5 +45,6 @@ const create = async (req,res)=>{
 
 export default {
   all,
-  create
+  create,
+  userByUsername
 }

@@ -3,7 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { PlayerContextProvider } from '@/context/players'
 import { GameStateContextProvider } from '@/context/gameState'
-import { RoomsContextProvider } from '@/context/rooms'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Providers from '@/app/providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,13 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <PlayerContextProvider>
-          <GameStateContextProvider>
-            <RoomsContextProvider>
-              {children}
-            </RoomsContextProvider>
-          </GameStateContextProvider>
-        </PlayerContextProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )
