@@ -228,7 +228,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         noResponses.length>=(allowedUsers?.length || 0) 
         && currentActions?.length
         && implActions
-        && turnPlayer
+        && turnPlayer.username === currentPlayer?.username
       ){
         //implement action and start chain
         actions[currentActions[currentActions.length-1]]()
@@ -279,7 +279,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         socket?.emit('no-response',[])
         return
       }
-      console.log('TURN PLAYER',turnPlayer,turnPlayer?.username === currentPlayer?.username)
       if(turnPlayer?.username === currentPlayer?.username){
         actions[currentActions[currentActions.length-1]]()
       }

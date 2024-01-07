@@ -3,14 +3,15 @@ import User from "../models/User.js";
 import redisClient from './redisClient/index.js';
 import data from './data/index.js';
 
-redisClient.on('error', err => console.log('Redis Client Error', err))
-
 const all = async (req,res)=>{
   let results;
   let fromCache = false;
+  let existingCache;
 
   try{
-    const existingCache = await redisClient.get(data.allUsersRankingCacheKey)
+    if(redisClient.isReady){
+      existingCache = await redisClient.get(data.allUsersCacheKey)
+    }
     
     //return cached value if existing
     if(existingCache){
@@ -18,7 +19,7 @@ const all = async (req,res)=>{
       fromCache = true
     }else{
       results = await User.find().populate('rooms')
-      redisClient.set(data.allUsersRankingCacheKey,JSON.stringify(results),{
+      redisClient.set(data.allUsersCacheKey,JSON.stringify(results),{
         //expire cache in one week
         EX: data.oneWeekInMilliSec
       })
@@ -34,11 +35,16 @@ const all = async (req,res)=>{
 }
 
 const allWithRankings = async (req,res)=>{
+  console.log('redis client',redisClient.isReady)
   let results;
   let fromCache = false;
+  let existingCache;
 
   try{
-    const existingCache = await redisClient.get(data.allUsersRankingCacheKey)
+    if(redisClient.isReady){
+      existingCache = await redisClient.get(data.allUsersRankingCacheKey)
+    }
+
     if(existingCache){
       results = JSON.parse(existingCache)
       fromCache = true

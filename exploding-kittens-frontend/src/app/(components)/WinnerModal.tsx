@@ -12,7 +12,7 @@ const WinnerSave = ()=>{
 
   const {currentPlayer} = usePlayerContext() ||{}
 
-  const {data,error,isPending,isSuccess, mutate} = useMutation({
+  const {error,isPending,isSuccess, mutate} = useMutation({
     mutationFn: async ({username,updateData}:UpdateUserByUsernameProps)=> {
       if(!winner){
         throw new Error('no winner set')
