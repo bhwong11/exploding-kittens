@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from "@tanstack/react-query"
+import { getAllUsersWithRanking } from "@/api"
 
 type LeaderBoardListProps = {
   truncateTopUsers?:number
@@ -9,14 +10,7 @@ const LeaderBoardList = ({truncateTopUsers}:LeaderBoardListProps)=>{
 
   const {data,isLoading,isError,error, refetch} = useQuery({
     queryKey:['users'],
-    queryFn:async ()=>{
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}users/`)
-      const data = await response.json()
-      if(response.status!==200){
-        throw new Error(data?.message ?? 'error getting data')
-      }
-      return data
-    },
+    queryFn:getAllUsersWithRanking,
     staleTime: 1000 * 60,
     retry:2,
     // refetch every 5 minutes
@@ -34,9 +28,10 @@ const LeaderBoardList = ({truncateTopUsers}:LeaderBoardListProps)=>{
   return (
     <div>
       {data
+        ?.results
         ?.slice(0,(truncateTopUsers || data.length))
         .map((user:User)=>(
-        <div>
+        <div key={user.username}>
           USER!!
           {JSON.stringify(user)}
         </div>

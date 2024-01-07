@@ -279,7 +279,10 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         socket?.emit('no-response',[])
         return
       }
-      actions[currentActions[currentActions.length-1]]()
+      console.log('TURN PLAYER',turnPlayer,turnPlayer?.username === currentPlayer?.username)
+      if(turnPlayer?.username === currentPlayer?.username){
+        actions[currentActions[currentActions.length-1]]()
+      }
     }
 
     implementNextAction()

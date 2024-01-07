@@ -12,7 +12,7 @@ import { authenticate,isDevMode } from "@/lib/helpers"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
-import { useQuery } from "@tanstack/react-query"
+import WinnerSave from "../(components)/WinnerModal"
 
 
 type RoomParams = {
@@ -25,7 +25,7 @@ const Room = ({params}:RoomParams)=>{
   const router = useRouter()
   const {players,currentPlayer,setCurrentPlayer} = usePlayerContext() || {}
 
-  const {deck,discardPile, socket} = useGameStateContext() || {}
+  const {deck,discardPile} = useGameStateContext() || {}
   const {winner} = useTurns() || {}
 
   const [users,setUsers] = useState<User[] | null>(null)
@@ -48,13 +48,6 @@ const Room = ({params}:RoomParams)=>{
       })
   },[])
 
-  const {data:usersData,isLoading,isStale} = useQuery({
-    queryKey:['all-users'],
-    queryFn: ()=>fetch('http://localhost:3000/users')
-  })
-
-  console.log('data',usersData,isLoading,isStale)
-
   useEffect(() => {
     if(isDevMode) return
     const setData = async () => {
@@ -70,7 +63,10 @@ const Room = ({params}:RoomParams)=>{
 
   return (
     <div className="w-full">
-      {winner && <div>Game Over! winner is: {winner.username}</div>}
+
+      {winner && currentPlayer?.username === winner?.username && <WinnerSave/>}
+      <WinnerSave/>
+
       Room Number: {params.roomNumber} <br/>
       {JSON.stringify(players)} <br/>
       {JSON.stringify(users)}

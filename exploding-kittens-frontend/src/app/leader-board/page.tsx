@@ -1,5 +1,6 @@
-import { dehydrate, HydrationBoundary, QueryClient, useQuery } from '@tanstack/react-query'
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import LeaderBoardList from '@/app/(components)/LeaderBoardList'
+import { getAllUsersWithRanking } from '@/api'
 
 
 const LeaderBoard = async ()=>{
@@ -8,7 +9,9 @@ const LeaderBoard = async ()=>{
 
   await queryClient.prefetchQuery({
     queryKey:['users'],
-    queryFn:()=>fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}users/`).then(data=>data.json())
+    queryFn:getAllUsersWithRanking,
+    gcTime:0,
+    staleTime:0
   })
 
 
