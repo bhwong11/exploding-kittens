@@ -7,6 +7,6 @@ router.get('/', userControllers.all)
 router.get('/rankings', userControllers.allWithRankings)
 router.get('/:username', userControllers.userByUsername)
 router.post('/', userControllers.create)
-router.post('/username/:username', userControllers.updateByUsername)
+router.patch('/username/:username', userControllers.updateByUsername)
 
 export default router

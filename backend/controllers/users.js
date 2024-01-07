@@ -1,35 +1,68 @@
 import bcrypt from 'bcrypt'
 import User from "../models/User.js";
-import { createClient } from 'redis';
+import redisClient from './redisClient/index.js';
+import data from './data/index.js';
 
-//redis for caching
-const client = createClient()
-await client.connect()
-
-client.on('error', err => console.log('Redis Client Error', err))
+redisClient.on('error', err => console.log('Redis Client Error', err))
 
 const all = async (req,res)=>{
+  let results;
+  let fromCache = false;
+
   try{
-    const users = await User.find().populate('rooms')
-    res.status(200).json(users)
+    const existingCache = await redisClient.get(data.allUsersRankingCacheKey)
+    console.log('exisit cahce',existingCache)
+    if(existingCache){
+      results = JSON.parse(existingCache)
+      fromCache = true
+    }else{
+      results = await User.find().populate('rooms')
+      redisClient.set(data.allUsersRankingCacheKey,JSON.stringify(results),{
+        //expire cache in one week
+        EX: data.oneWeekInMilliSec
+      })
+    }
+
+    res.status(200).json({
+      fromCache,results:[...results]
+    })
+
   }catch(e){
     res.status(500).json({error:`error processing on /users get route ${e}`})
   }
 }
 
 const allWithRankings = async (req,res)=>{
-  try{
-    const existingCache = await client.get('user:rankings')
+  let results;
+  let fromCache = false;
 
+  try{
+    const existingCache = await redisClient.get(data.allUsersRankingCacheKey)
     console.log('exisit cahce',existingCache)
-    const users = await User.find().sort({'wins': -1})
-    const usersWithRank = users.map((user,idx)=>({
-      ...user.toObject(),
-      ranking:idx+1
-    }))
-    //client.set('user:rankings',users)
-    console.log('users',usersWithRank)
-    res.status(200).json(usersWithRank)
+    if(existingCache){
+      results = JSON.parse(existingCache)
+      fromCache = true
+    }else{
+      const users = await User.find().sort({'wins': -1})
+      console.log('users',users.map((user,idx)=>({
+        ...user.toObject(),
+        ranking:idx+1
+      })))
+      results = users.map((user,idx)=>({
+        ...user.toObject(),
+        ranking:idx+1
+      }))
+      redisClient.set(data.allUsersRankingCacheKey,JSON.stringify(users),{
+        //expire cache in one week
+        EX: data.oneWeekInMilliSec
+      })
+    }
+
+
+    res.status(200).json({
+      fromCache,results:[...results]
+    })
+
   }catch(e){
     res.status(500).json({error:`error processing on /users get route ${e}`})
   }

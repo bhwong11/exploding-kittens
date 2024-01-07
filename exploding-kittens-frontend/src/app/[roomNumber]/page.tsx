@@ -28,19 +28,23 @@ const Room = ({params}:RoomParams)=>{
   const {deck,discardPile, socket} = useGameStateContext() || {}
   const {winner} = useTurns() || {}
 
-  const [users,setUsers] = useState<User | null>(null)
+  const [users,setUsers] = useState<User[] | null>(null)
   const [username,setUsername] = useState<string>("")
 
   const {createGameAssets} = useInitGame()
 
   const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket({initSocket:true})
 
+  type usersReturn = {
+    fromCache:boolean
+    results:User[]
+  }
   useEffect(()=>{
     //add to .env
     fetch('http://localhost:3000/users')
       .then((res)=>res.json())
-      .then((data:User)=>{
-        setUsers(data)
+      .then((data:usersReturn)=>{
+        setUsers(data.results)
       })
   },[])
 

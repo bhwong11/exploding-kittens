@@ -1,4 +1,6 @@
 import mongoose from 'mongoose'
+import redisClient from '../controllers/redisClient/index.js';
+import data from '../controllers/data/index.js';
 
 const { Schema } = mongoose
 
@@ -13,6 +15,24 @@ const userSchema = new Schema({
   //need to add game state data to save
   // also need to add pw 
 },{ timestamps: true });
+
+//middleware for before updates/save happens to bust cache
+userSchema.pre('findOneAndUpdate', function(next) {
+  if (this.getUpdate().wins || this.getUpdate().wins===0) {
+    // clear cache when wins is updated
+    redisClient.del(data.allUsersRankingCacheKey)
+    redisClient.del(data.allUsersCacheKey)
+  }
+  next()
+})
+
+userSchema.pre('save', function(next) {
+  if (this.isNew) {
+    // clear cache when new user is created
+    redisClient.del(data.allUsersCacheKey)
+  }
+  next()
+})
 
 const User = mongoose.model('User', userSchema);
 
