@@ -71,7 +71,6 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     }
 
     socket.on('all-players',data=>{
-      console.log('ALL PLAYERS',data)
       if(setPlayers)setPlayers(data)
     })
 
@@ -187,9 +186,8 @@ export const useAsyncEmitSocketEvent = ()=>{
     if(transitionCompletedCallback) transitionCompleteCallback.current = transitionCompletedCallback
 
     prevIsPending.current = false
-    console.log('HIT!!',eventName)
+
     socket?.once(trackedListenEvent,(data:any):void=>{
-      console.log('EVENT LISTENER HIT',trackedListenEvent,data)
       startTransition(()=>{
         eventDataCallBack?.(data)
       })
@@ -512,10 +510,13 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
   const players = getNonLostPlayers(allPlayers ?? [])
   
   //will be false if no winner
-  const winner: Player | boolean = players.length>1
+  console.log('deck length',players,!!deck?.length,players.filter(player=>!player.lose).length===1,(players?.find(player=>!player.lose) ?? false) )
+  const winner: Player | boolean = (allPlayers ?? [])?.length>1
     && !!deck?.length
     && players.filter(player=>!player.lose).length===1 
     && (players?.find(player=>!player.lose) ?? false)
+  
+    console.log('WINNER',winner)
 
   const {attemptActivate,currentActions} = useActivateResponseHandlers()
   const {drawCard} = useGameActions()
