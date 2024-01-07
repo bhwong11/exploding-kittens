@@ -19,6 +19,9 @@ const OtherPlayers = ()=>{
           <div>
             number of cards: {player?.cards?.length ?? 0}
           </div>
+          <div>
+            lost: {JSON.stringify(player?.lose)}
+          </div>
         </div>
       ))}
     </div>

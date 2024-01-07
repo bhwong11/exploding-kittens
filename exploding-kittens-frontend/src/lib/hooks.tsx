@@ -71,6 +71,7 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     }
 
     socket.on('all-players',data=>{
+      console.log('ALL PLAYERS',data)
       if(setPlayers)setPlayers(data)
     })
 
@@ -141,7 +142,11 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 export const useAsyncEmitSocketEvent = ()=>{
   const { 
     socket,
+    turnCount
   } = useGameStateContext() || {}
+
+  const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
+  const players = getNonLostPlayers(allPlayers ?? [])
 
   type AsyncEmitProps = {
     eventName:keyof ClientToServerEvents
@@ -155,6 +160,8 @@ export const useAsyncEmitSocketEvent = ()=>{
   const transitionCompleteCallback = useRef<Function>(()=>null)
   const prevIsPending = useRef(false)
   const [hasTransitionCompleted,setHasTransitionCompleted] = useState(false)
+
+  const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
 
   //this only listens to one asyncEmit per hook instance, if you use multiple at the same time
   //the wrong async emit could be listened
@@ -174,20 +181,24 @@ export const useAsyncEmitSocketEvent = ()=>{
     eventDataCallBack,
     transitionCompletedCallback
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
-    socket?.emit(eventName,emitData)
+    
     setHasTransitionCompleted(false)
 
     if(transitionCompletedCallback) transitionCompleteCallback.current = transitionCompletedCallback
 
     prevIsPending.current = false
-
-    socket?.on(trackedListenEvent,(data:any):void=>{
+    console.log('HIT!!',eventName)
+    socket?.once(trackedListenEvent,(data:any):void=>{
+      console.log('EVENT LISTENER HIT',trackedListenEvent,data)
       startTransition(()=>{
         eventDataCallBack?.(data)
       })
-      socket?.off(trackedListenEvent)
+      //socket?.off(trackedListenEvent)
       resolve(data)
     })
+    if(turnPlayer?.username === currentPlayer?.username){
+      socket?.emit(eventName,emitData)
+    }
     
     setTimeout(reject, 5000);
   })
@@ -228,7 +239,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         noResponses.length>=(allowedUsers?.length || 0) 
         && currentActions?.length
         && implActions
-        && turnPlayer.username === currentPlayer?.username
       ){
         //implement action and start chain
         actions[currentActions[currentActions.length-1]]()
@@ -279,9 +289,8 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         socket?.emit('no-response',[])
         return
       }
-      if(turnPlayer?.username === currentPlayer?.username){
-        actions[currentActions[currentActions.length-1]]()
-      }
+
+      actions[currentActions[currentActions.length-1]]()
     }
 
     implementNextAction()
