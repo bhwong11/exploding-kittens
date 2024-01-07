@@ -18,6 +18,13 @@ npm run dev
 ```
 
 # backend
+
+<b>prerequisites:<b>
+install redis server:
+https://redis.io/docs/install/install-redis/install-redis-on-mac-os/
+
+`brew install redis`
+
 ```
 cd backend
 
@@ -29,5 +36,6 @@ DB_URI=[mongo compass access url]
 JWT_SECRET=[any string]
 
 //to start server
+redis-server //will run in forground, run in seperate window
 nodemon
 ```

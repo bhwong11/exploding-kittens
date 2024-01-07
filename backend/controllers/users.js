@@ -1,25 +1,41 @@
 import bcrypt from 'bcrypt'
 import User from "../models/User.js";
+import { createClient } from 'redis';
+
+//redis for caching
+const client = createClient()
+await client.connect()
+
+client.on('error', err => console.log('Redis Client Error', err))
 
 const all = async (req,res)=>{
   try{
-    const users = await User.find().populate('rooms');
+    const users = await User.find().populate('rooms')
     res.status(200).json(users)
   }catch(e){
     res.status(500).json({error:`error processing on /users get route ${e}`})
   }
 }
 
-const userRankings = async (req,res)=>{
+const allWithRankings = async (req,res)=>{
   try{
-    const users = await User.find();
-    res.status(200).json(users)
+    const existingCache = await client.get('user:rankings')
+
+    console.log('exisit cahce',existingCache)
+    const users = await User.find().sort({'wins': -1})
+    const usersWithRank = users.map((user,idx)=>({
+      ...user.toObject(),
+      ranking:idx+1
+    }))
+    //client.set('user:rankings',users)
+    console.log('users',usersWithRank)
+    res.status(200).json(usersWithRank)
   }catch(e){
     res.status(500).json({error:`error processing on /users get route ${e}`})
   }
 }
 
-const userWithRankingByUsername = async (req,res)=>{
+const userByUsername = async (req,res)=>{
   try{
     const user = User.find({username:req.params.username})
     if(!user){
@@ -52,8 +68,27 @@ const create = async (req,res)=>{
   }
 }
 
+const updateByUsername = async (req,res)=>{
+  try{
+    const updatedUser = await User.findOneAndUpdate(
+      {username:req.params.username},
+      {...req.body},
+      {new:true}
+    )
+
+    if(!updatedUser){
+      return res.json({error:'error, user not found'}).status(400)
+    }
+    res.json(updatedUser).status(200)
+  }catch(e){
+    res.json({error:`error processing on /user patch route ${e}`}).status(500)
+  }
+}
+
 export default {
   all,
   create,
-  userWithRankingByUsername
+  userByUsername,
+  updateByUsername,
+  allWithRankings
 }

@@ -33,7 +33,6 @@ const LeaderBoardList = ({truncateTopUsers}:LeaderBoardListProps)=>{
 
   return (
     <div>
-      {/* {JSON.stringify(data)} */}
       {data
         ?.slice(0,(truncateTopUsers || data.length))
         .map((user:User)=>(
