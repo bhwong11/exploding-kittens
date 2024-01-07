@@ -63,7 +63,7 @@ const Room = ({params}:RoomParams)=>{
 
   return (
     <div className="w-full">
-      {winner && currentPlayer?.username === winner?.username && <WinnerSave/>}
+      <WinnerSave/>
 
       Room Number: {params.roomNumber} <br/>
       {JSON.stringify(players)} <br/>
