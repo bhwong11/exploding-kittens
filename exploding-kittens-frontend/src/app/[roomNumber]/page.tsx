@@ -32,7 +32,7 @@ const Room = ({params}:RoomParams)=>{
 
   const {createGameAssets} = useInitGame()
 
-  const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket()
+  const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket({initSocket:true})
 
   useEffect(()=>{
     //add to .env
@@ -90,12 +90,6 @@ const Room = ({params}:RoomParams)=>{
         <button onClick={clearGameState} className="btn btn-blue">
             clear gameState
         </button>
-        {/* <button onClick={()=>{socket?.emit('save-room')}} className="btn btn-blue">
-            save room
-        </button>
-        <button onClick={()=>{socket?.emit('get-saved-room')}} className="btn btn-blue">
-            get saved room
-        </button> */}
         <SaveRefreshGame/>
       </div>
       <OtherPlayers/>
