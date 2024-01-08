@@ -1,23 +1,6 @@
 
 
 export default `#graphql
-
-# enum CardType {
-#   ATTACK = "attack", 
-#   CATBEARD = "cat-beard",
-#   CATMELON = "cat-melon",
-#   CATPOTATOE = "cat-potatoe",
-#   CATRAINBOW = "cat-rainbow",
-#   CATTACO = "cat-taco",
-#   DIFFUSE = "diffuse",
-#   EXPLODING = "exploding",
-#   FAVOR = "favor",
-#   NOPE = "nope",
-#   SEETHEFUTURE = "see-the-future",
-#   SHUFFLE = "shuffle", 
-#   SKIP = "skip"
-# }
-
 type Card {
   id:Int,
   color: String,
@@ -79,7 +62,7 @@ type UserWithRanking {
 
 type UserWithRankingResponse {
   fromCache: Boolean,
-  result:[UserWithRanking]
+  results:[UserWithRanking]
 }
 
 type Query {

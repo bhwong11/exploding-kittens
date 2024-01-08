@@ -6,7 +6,6 @@ import data from "../data/index.js";
 export default {
   Query:{
     getUser: async (_,{username})=>{
-      console.log('QUERY!!')
       try{
 
         const user = await User.findOne({username})
@@ -18,7 +17,6 @@ export default {
             },
           })
         }
-        console.log('user',user)
         return user
 
       }catch(err){
@@ -39,14 +37,18 @@ export default {
     
       try{
         if(redisClient.isReady){
+          console.log('IS READY')
           existingCache = await redisClient.get(data.allUsersCacheKey)
         }
+
+        console.log('EXISTING CACHE',existingCache)
         
         //return cached value if existing
         if(existingCache){
           results = JSON.parse(existingCache)
           fromCache = true
         }else{
+          console.log('else!!')
           results = await User.find().populate('rooms')
           redisClient.set(data.allUsersCacheKey,JSON.stringify(results),{
             //expire cache in one week
@@ -55,7 +57,8 @@ export default {
         }
     
         return {
-          fromCache,results:[...results]
+          fromCache,
+          results:[...results]
         }
     
       }catch(err){
