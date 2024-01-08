@@ -1,5 +1,5 @@
 const getAllUsers = async ()=>{
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}users/`
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/users/`
   //only save cache for 10 sec for next server rendering
     ,{
       next: { revalidate: 10 },
@@ -13,7 +13,7 @@ const getAllUsers = async ()=>{
 }
 
 const getAllUsersWithRanking = async ()=>{
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}users/rankings/`
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/users/rankings/`
   //only save cache for 10 sec for next server rendering
     ,{
       next: { revalidate: 10 },
@@ -29,7 +29,7 @@ const getAllUsersWithRanking = async ()=>{
 //should probably seperate out password/username changes into their own request
 const updateUserByUsername = async ({username,updateData={}}:UpdateUserByUsernameProps)=>{
   //add frontend authenication check
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}users/username/${username}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/users/username/${username}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
