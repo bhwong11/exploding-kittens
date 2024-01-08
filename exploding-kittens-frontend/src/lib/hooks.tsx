@@ -10,15 +10,13 @@ import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
 
 export const useRoomSocket = () => {
   const {
-    setSocket,
-  } = useGameStateContext() || {}
-  const {
-    setRooms
+    rooms,
+    setRooms,
+    setSocket
   } = useRoomsContext() || {}
 
   let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
 
-  
   useEffect(() => {
     const findRooms = async () => {
       await fetch('http://localhost:3000/rooms', {
@@ -42,8 +40,9 @@ export const useRoomSocket = () => {
     }
 
     socket.on('new-room', data => {
-      console.log('socket data', data)
-      if (setRooms) setRooms(data)
+      const allRooms: Room[] = rooms || []
+      allRooms.push(data)
+      if (setRooms) setRooms(allRooms)
     })
   }, [])
 }

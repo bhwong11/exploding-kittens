@@ -16,9 +16,8 @@ const create = async (req,res)=>{
     const roomsCount = await Room.countDocuments()
     const newRoom = new Room({roomNumber:roomsCount})
     await newRoom.save()
-    const rooms = await Room.find()
     console.log('new room made')
-    io.emit('new-room', rooms)
+    io.emit('new-room', newRoom)
     res.json(newRoom).status(200)
   }catch(e){
     res.json({error:`error processing on /rooms post route ${e}`}).status(500)

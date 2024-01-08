@@ -14,7 +14,7 @@ export default function Home() {
     })
     .then(res => res.json())
     .then((data: Room[]) => {
-      console.log(data)
+      console.log('new room', data)
     })
   }
 

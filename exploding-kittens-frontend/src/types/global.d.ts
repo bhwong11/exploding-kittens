@@ -85,7 +85,7 @@ declare global{
       formObject:{[key:string]:any}
       complete:boolean
     }) => void
-    ['new-room']: (arg:Room[]) => void
+    ['new-room']: (arg:Room) => void
   }
   
   interface ClientToServerEvents {
@@ -116,6 +116,6 @@ declare global{
       formObject:{[key:string]:any}
       complete:boolean
     }) => void
-    ['new-room']: (arg:Room[]) => void
+    ['new-room']: (arg:Room) => void
   }
 }
