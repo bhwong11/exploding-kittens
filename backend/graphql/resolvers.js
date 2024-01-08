@@ -9,7 +9,7 @@ export default {
       console.log('QUERY!!')
       try{
 
-        const user = await User.find({username})
+        const user = await User.findOne({username})
         if(!user){
           throw new GraphQLError(`username not found ${username}`, {
             extensions: {

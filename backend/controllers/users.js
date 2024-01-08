@@ -73,7 +73,7 @@ const allWithRankings = async (req,res)=>{
 
 const userByUsername = async (req,res)=>{
   try{
-    const user = User.find({username:req.params.username})
+    const user = User.findOne({username:req.params.username})
     if(!user){
       res.status(400).json(`error: no user with username: ${req.params.username} found`)
     }
