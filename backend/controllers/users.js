@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import User from "../models/User.js";
-import redisClient from './redisClient/index.js';
-import data from './data/index.js';
+import redisClient from '../redisClient/index.js';
+import data from '../data/index.js';
 
 const all = async (req,res)=>{
   let results;

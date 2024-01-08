@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
-import redisClient from '../controllers/redisClient/index.js';
-import data from '../controllers/data/index.js';
+import redisClient from '../redisClient/index.js';
+import data from '../data/index.js';
 
 const { Schema } = mongoose
 
