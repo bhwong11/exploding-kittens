@@ -1,7 +1,23 @@
-import Image from 'next/image'
+'use client'
 import { RoomList } from './RoomList'
 
 export default function Home() {
+  // will probably move this createRoom function
+  // out to another component down the line
+  const createRoom = async () => {
+    await fetch(process.env.NEXT_PUBLIC_BACKEND_API + '/rooms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    })
+    .then(res => res.json())
+    .then((data: Room[]) => {
+      console.log('new room', data)
+    })
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       HOME!
@@ -14,6 +30,7 @@ export default function Home() {
       disable create game assets once created
       add READ.ME
       <RoomList />
+      <button onClick={createRoom}>Create New Room</button>
     </main>
   )
 }

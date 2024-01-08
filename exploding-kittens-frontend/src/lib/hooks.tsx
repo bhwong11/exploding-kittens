@@ -2,9 +2,50 @@ import { useEffect, useState, useTransition,useRef} from "react"
 import { io, Socket } from "socket.io-client"
 import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
+import { useRoomsContext } from "@/context/rooms"
 import { useCardActions,useGameActions } from "@/lib/actions"
 import { actionTypes, cardTypes } from "@/data"
 import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
+//show prompt hook
+
+export const useRoomSocket = () => {
+  const {
+    rooms,
+    setRooms,
+    setSocket
+  } = useRoomsContext() || {}
+
+  let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
+
+  useEffect(() => {
+    const findRooms = async () => {
+      await fetch('http://localhost:3000/rooms', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(res => res.json())
+      .then((data: Room[]) => {
+        if (setRooms) setRooms(data)
+      })
+    }
+    findRooms()
+  }, [])
+
+  useEffect(() => {
+    socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
+    if(setSocket){
+      setSocket(socket)
+    }
+
+    socket.on('new-room', data => {
+      const allRooms: Room[] = rooms || []
+      allRooms.push(data)
+      if (setRooms) setRooms(allRooms)
+    })
+  }, [])
+}
 
 type UsePlayerSocketProps = {initSocket:boolean}
 export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:false})=>{
