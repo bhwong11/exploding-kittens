@@ -20,6 +20,7 @@ export const useGameActions = ()=>{
     if((currPlayerIndx || currPlayerIndx===0) && currPlayerIndx!==-1){
       newPlayers[currPlayerIndx].cards = cards
     }
+    console.log('set player hand',newPlayers)
     socket?.emit('all-players',newPlayers)
   }
 
@@ -48,6 +49,8 @@ export const useGameActions = ()=>{
     }
 
     const player = players?.find(player=>player.username===currentPlayer?.username)
+
+    console.log('DISCOARD',player)
 
     const discardedCards = player?.cards?.filter(card=>{
       //cardId is the prioritized arg
@@ -129,6 +132,7 @@ export const useGameActions = ()=>{
     setPlayerHand,
     getPlayerCurrentHand,
     discardCards,
+    addToDiscard,
     isActionValidFromCards,
     validResponseCards,
     allowedUserActionsRestrictions
@@ -154,7 +158,7 @@ export const useCardActions = ()=>{
   } = useGameStateContext() || {}
   const {players:allPlayers,currentPlayer,setPlayers} = usePlayerContext() || {}
   const {asyncEmit} = useAsyncEmitSocketEvent()
-  const {discardCards} = useGameActions()
+  const {discardCards,addToDiscard} = useGameActions()
 
   const players = getNonLostPlayers(allPlayers ?? [])
   const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
@@ -467,22 +471,30 @@ export const useCardActions = ()=>{
       if(player.username===turnPlayer?.username){
         return {
           ...player,
+          cards:[],
           lose:true
         }
       }
       return player
     })
-
+    const cardsToDiscard = turnPlayer?.cards
+    console.log('new players',newPlayers)
+    // discardCards(turnPlayer?.cards ?? [])
     await asyncEmit({
       eventName:'all-players',
       trackedListenEvent:'all-players',
       emitData:newPlayers,
       eventDataCallBack: (data:Player[])=>{
         if(!setPlayers) return
+        console.log('CALLBACK!!',data)
         setPlayers(data)
-        discardCards(turnPlayer?.cards ?? [])
       },
-      transitionCompletedCallback:()=>sendActionComplete(true)
+      transitionCompletedCallback:()=>{
+        console.log('transition complete',turnPlayer?.cards)
+        //discardCards(turnPlayer?.cards ?? [])
+        addToDiscard(cardsToDiscard)
+        sendActionComplete(true)
+      }
     })
   }
 

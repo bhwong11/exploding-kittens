@@ -22,7 +22,7 @@ export const useFetchToContext = ()=>{
 
   const refreshRoom = (roomNumber:number,onError: Function) => (
     //no caching since we expect game data to change rapidly
-    fetch(`process.env.NEXT_PUBLIC_BACKEND_API${roomNumber}/repopulate-room`)
+    fetch(`process.env.NEXT_PUBLIC_BACKEND_API/${roomNumber}/repopulate-room`)
       .then(
         res=>res.json()
       )
@@ -43,7 +43,7 @@ export const useFetchToContext = ()=>{
 
   const saveRoomData = (roomNumber:number,onError: Function) => (
     //no caching since we expect game data to change rapidly
-    fetch(`process.env.NEXT_PUBLIC_BACKEND_API${roomNumber}/save-game`,{
+    fetch(`process.env.${roomNumber}/save-game`,{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

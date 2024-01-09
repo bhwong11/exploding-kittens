@@ -12,6 +12,7 @@ import { authenticate,isDevMode } from "@/lib/helpers"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
+import WinnerSave from "../(components)/WinnerModal"
 
 
 type RoomParams = {
@@ -24,22 +25,26 @@ const Room = ({params}:RoomParams)=>{
   const router = useRouter()
   const {players,currentPlayer,setCurrentPlayer} = usePlayerContext() || {}
 
-  const {deck,discardPile, socket} = useGameStateContext() || {}
+  const {deck,discardPile} = useGameStateContext() || {}
   const {winner} = useTurns() || {}
 
-  const [users,setUsers] = useState<User | null>(null)
+  const [users,setUsers] = useState<User[] | null>(null)
   const [username,setUsername] = useState<string>("")
 
   const {createGameAssets} = useInitGame()
 
   const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket({initSocket:true})
 
+  type usersReturn = {
+    fromCache:boolean
+    results:User[]
+  }
   useEffect(()=>{
     //add to .env
     fetch('http://localhost:3000/users')
       .then((res)=>res.json())
-      .then((data:User)=>{
-        setUsers(data)
+      .then((data:usersReturn)=>{
+        setUsers(data.results)
       })
   },[])
 
@@ -58,7 +63,8 @@ const Room = ({params}:RoomParams)=>{
 
   return (
     <div className="w-full">
-      {winner && <div>Game Over! winner is: {winner.username}</div>}
+      <WinnerSave/>
+
       Room Number: {params.roomNumber} <br/>
       {JSON.stringify(players)} <br/>
       {JSON.stringify(users)}

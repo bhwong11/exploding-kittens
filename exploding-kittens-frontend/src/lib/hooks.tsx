@@ -141,7 +141,11 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 export const useAsyncEmitSocketEvent = ()=>{
   const { 
     socket,
+    turnCount
   } = useGameStateContext() || {}
+
+  const {players: allPlayers, currentPlayer} = usePlayerContext() || {}
+  const players = getNonLostPlayers(allPlayers ?? [])
 
   type AsyncEmitProps = {
     eventName:keyof ClientToServerEvents
@@ -155,6 +159,8 @@ export const useAsyncEmitSocketEvent = ()=>{
   const transitionCompleteCallback = useRef<Function>(()=>null)
   const prevIsPending = useRef(false)
   const [hasTransitionCompleted,setHasTransitionCompleted] = useState(false)
+
+  const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
 
   //this only listens to one asyncEmit per hook instance, if you use multiple at the same time
   //the wrong async emit could be listened
@@ -174,20 +180,23 @@ export const useAsyncEmitSocketEvent = ()=>{
     eventDataCallBack,
     transitionCompletedCallback
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
-    socket?.emit(eventName,emitData)
+    
     setHasTransitionCompleted(false)
 
     if(transitionCompletedCallback) transitionCompleteCallback.current = transitionCompletedCallback
 
     prevIsPending.current = false
 
-    socket?.on(trackedListenEvent,(data:any):void=>{
+    socket?.once(trackedListenEvent,(data:any):void=>{
       startTransition(()=>{
         eventDataCallBack?.(data)
       })
-      socket?.off(trackedListenEvent)
+      //socket?.off(trackedListenEvent)
       resolve(data)
     })
+    if(turnPlayer?.username === currentPlayer?.username){
+      socket?.emit(eventName,emitData)
+    }
     
     setTimeout(reject, 5000);
   })
@@ -228,7 +237,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         noResponses.length>=(allowedUsers?.length || 0) 
         && currentActions?.length
         && implActions
-        && turnPlayer
       ){
         //implement action and start chain
         actions[currentActions[currentActions.length-1]]()
@@ -279,6 +287,7 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
         socket?.emit('no-response',[])
         return
       }
+
       actions[currentActions[currentActions.length-1]]()
     }
 
@@ -341,13 +350,6 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
       newAllowedUsers = allowedUserActionsRestrictions[action]
     }
     
-    //add to gameActions hooks
-    if(action === actionTypes.exploding){
-      newAllowedUsers = currentPlayer?.username?[currentPlayer.username]:[]
-    }
-    if(action === actionTypes.diffuse){
-      newAllowedUsers = []
-    }
     discardCards(cards,cardId,cardType)
 
     socket?.emit('activate-attempt',{
@@ -508,10 +510,13 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
   const players = getNonLostPlayers(allPlayers ?? [])
   
   //will be false if no winner
-  const winner: Player | boolean = players.length>1
+  console.log('deck length',players,!!deck?.length,players.filter(player=>!player.lose).length===1,(players?.find(player=>!player.lose) ?? false) )
+  const winner: Player | boolean = (allPlayers ?? [])?.length>1
     && !!deck?.length
     && players.filter(player=>!player.lose).length===1 
     && (players?.find(player=>!player.lose) ?? false)
+  
+    console.log('WINNER',winner)
 
   const {attemptActivate,currentActions} = useActivateResponseHandlers()
   const {drawCard} = useGameActions()

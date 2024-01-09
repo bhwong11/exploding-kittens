@@ -9,12 +9,25 @@ import { generateRoutes, emitToPlayerRoom } from './helpers/index.js'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import Room from './models/Room.js'
+import { ApolloServer } from '@apollo/server'
+import { expressMiddleware } from '@apollo/server/express4';
+import resolvers from './graphql/resolvers.js'
+import typeDefs from './graphql/typeDefs.js'
 
 dotenv.config()
 
 const app = express()
 const server = http.createServer(app)
 const port = 3000
+
+const apolloServer = new ApolloServer({
+  typeDefs,
+  resolvers,
+});
+
+await apolloServer.start();
+
+//socket.io
 export const io = new Server(server, {
   cors: {
     origin: "*",
@@ -36,6 +49,8 @@ app.get('/', async (req, res) => {
     .toArray()
   res.send(results).status(200)
 })
+
+app.use('/graphql', cors(),express.json(), expressMiddleware(apolloServer));
 
 generateRoutes(routes,app)
 

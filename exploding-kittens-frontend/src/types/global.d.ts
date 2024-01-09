@@ -41,6 +41,18 @@ declare global{
     }
     submitCallBack: Function
   }
+  type updatedUserBody = {
+    username?:string
+    email?:string
+    password?:string
+    wins?:number
+    rooms?:string[]
+  }
+  
+  type UpdateUserByUsernameProps = {
+    username:string,
+    updateData:updatedUserBody
+  }
   //socket.io event types
   interface ServerToClientEvents {
     ['new-page-backend']: (arg:{message:string}) => void
