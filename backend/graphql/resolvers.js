@@ -37,25 +37,28 @@ export default {
     
       try{
         if(redisClient.isReady){
-          console.log('IS READY')
           existingCache = await redisClient.get(data.allUsersCacheKey)
         }
 
-        console.log('EXISTING CACHE',existingCache)
         
         //return cached value if existing
         if(existingCache){
           results = JSON.parse(existingCache)
           fromCache = true
         }else{
-          console.log('else!!')
-          results = await User.find().populate('rooms')
+          const users = await User.find().populate('rooms').sort({'wins': -1})
+          results = users.map((user,idx)=>({
+            ...user.toObject(),
+            ranking:idx+1
+          }))
+          console.log('USERS',results)
           redisClient.set(data.allUsersCacheKey,JSON.stringify(results),{
             //expire cache in one week
             EX: data.oneWeekInMilliSec
           })
         }
-    
+        
+        console.log('USERS2',results)
         return {
           fromCache,
           results:[...results]

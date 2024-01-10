@@ -7,6 +7,7 @@ import {updateUserByUsername} from "@/api"
 import { usePlayerContext } from "@/context/players"
 import LeaderBoardList from "@/app/(components)/LeaderBoardList"
 import { useRouter } from "next/navigation"
+import { apolloClient, UPDATE_USER } from "@/graphql"
 
 const WinnerSave = ()=>{
   const [open,setOpen] = useState(true)
@@ -17,17 +18,20 @@ const WinnerSave = ()=>{
   const router = useRouter()
 
   const {error,isPending,isSuccess, mutate} = useMutation({
-    mutationFn: async ({username,updateData}:UpdateUserByUsernameProps)=> {
-      if(!winner){
-        throw new Error('no winner set')
-      }
-      if(currentPlayer?.username !== winner.username){
-        throw new Error('current user is not winner ,sorry :(')
-      }
-      await updateUserByUsername({username,updateData})
+    mutationFn: async ({username,updateUserInput}:UpdateUserByUsernameProps)=> {
+      await apolloClient.mutate({
+        mutation:UPDATE_USER,
+        variables: {
+          username,
+          updateUserInput
+        },
+      })      
     },
     onSuccess:()=>{
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      // queryClient.setQueryData(['users'],(oldData) => {
+      //   return
+      // })
     }
   })
 
@@ -64,7 +68,7 @@ const WinnerSave = ()=>{
               <button className="btn btn-blue" onClick={()=>mutate(
                 {
                   username:winner?.username,
-                  updateData:{
+                  updateUserInput:{
                     wins:(currentPlayer?.wins ?? 0) +1
                   }
                 }

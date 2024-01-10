@@ -13,23 +13,24 @@ type NoResponse {
 }
 
 type Player {
-  username:String,
-  active: Boolean,
-  lose: Boolean,
+  username:String
+  active: Boolean
+  lose: Boolean
   cards:[Card]
 }
 type Room {
-  roomNumber: Int,
-  users:[User],
-  players:[Player],
-  deck:[Card],
-  discardPile:[Card],
-  turnCount: Int,
-  attackTurns:Int,
-  currentActions:[String],
-  noResponses:[NoResponse],
-  allowedUsers:[String],
-  actionPromptIndex: Int,
+  _id:ID,
+  roomNumber: Int
+  users:[User]
+  players:[Player]
+  deck:[Card]
+  discardPile:[Card]
+  turnCount: Int
+  attackTurns:Int
+  currentActions:[String]
+  noResponses:[NoResponse]
+  allowedUsers:[String]
+  actionPromptIndex: Int
   createdAt: String
   updatedAt: String
 }
@@ -55,6 +56,7 @@ type UserWithRanking {
   username: String
   email: String
   wins: Int
+  ranking: Int
   rooms:[Room]
   createdAt: String
   updatedAt: String
