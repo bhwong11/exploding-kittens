@@ -3,7 +3,6 @@
 import React,{useState} from "react"
 import { useTurns } from "@/lib/hooks"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import {updateUserByUsername} from "@/api"
 import { usePlayerContext } from "@/context/players"
 import LeaderBoardList from "@/app/(components)/LeaderBoardList"
 import { useRouter } from "next/navigation"
@@ -29,9 +28,6 @@ const WinnerSave = ()=>{
     },
     onSuccess:()=>{
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      // queryClient.setQueryData(['users'],(oldData) => {
-      //   return
-      // })
     }
   })
 

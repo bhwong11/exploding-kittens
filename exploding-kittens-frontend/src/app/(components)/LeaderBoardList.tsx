@@ -68,25 +68,27 @@ const LeaderBoardList = ({truncateTopUsers}:LeaderBoardListProps)=>{
 
   return (
     <div>
-      {data
-        ?.results
-        ?.slice(0,(truncateTopUsers || data?.length))
-        .map((user:User)=>(
-        <div key={user.username} className="border border-black">
-          User Stats:
-          <div>username: {user.username}</div>
-          <div>wins:{user.wins}</div>
-          <div>ranking: {user.ranking}</div>
-        </div>
-      ))}
+      <div className="flex flex-col justify-center items-center gap-1 p-3">
+        {data
+          ?.results
+          ?.slice(0,(truncateTopUsers || data?.length))
+          .map((user:User)=>(
+          <div key={user.username} className="border border-black w-[15rem] p-3">
+            User Stats:
+            <div>username: {user.username}</div>
+            <div>wins:{user.wins}</div>
+            <div>ranking: {user.ranking}</div>
+          </div>
+        ))}
 
-      <div>
-        <button className="btn btn-blue" onClick={()=>{
-          //manually refetch, bypasses cache
-          refetch()
-        }}>
-          get latest top scores
-        </button>
+        <div>
+          <button className="btn btn-blue" onClick={()=>{
+            //manually refetch, bypasses cache
+            refetch()
+          }}>
+            get latest top scores
+          </button>
+        </div>
       </div>
 
       {/* This is for testing mutatation quickly */}

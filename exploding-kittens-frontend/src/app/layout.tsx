@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { PlayerContextProvider } from '@/context/players'
-import { GameStateContextProvider } from '@/context/gameState'
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Providers from '@/app/providers'
 
 const inter = Inter({ subsets: ['latin'] })

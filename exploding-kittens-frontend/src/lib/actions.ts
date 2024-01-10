@@ -50,8 +50,6 @@ export const useGameActions = ()=>{
 
     const player = players?.find(player=>player.username===currentPlayer?.username)
 
-    console.log('DISCOARD',player)
-
     const discardedCards = player?.cards?.filter(card=>{
       //cardId is the prioritized arg
       const cardInputIds = cards?.map(c=>c.id) ?? []
@@ -118,7 +116,7 @@ export const useGameActions = ()=>{
 
 
   const validResponseCards = useMemo(()=>playerCards?.filter(card=>(
-    responseActionsTypes.includes(card.type as typeof responseActionsTypes[number])
+    responseActionsTypes.includes(card?.type as typeof responseActionsTypes[number])
     && isActionValidFromCards([card])
   )) ?? [],[playerCards?.length, isActionValidFromCards])
 
@@ -486,7 +484,6 @@ export const useCardActions = ()=>{
       emitData:newPlayers,
       eventDataCallBack: (data:Player[])=>{
         if(!setPlayers) return
-        console.log('CALLBACK!!',data)
         setPlayers(data)
       },
       transitionCompletedCallback:()=>{

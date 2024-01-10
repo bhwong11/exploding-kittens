@@ -59,7 +59,7 @@ const ResponseAction = ()=>{
             <button className="btn btn-blue" onClick={()=>attemptActivate('nope')}>
               send nope
             </button>}
-
+              
               {validResponseCards.map(card=>(
                 <div key={`response-action-${card.id}`} className="border border-black flex flex-col">
                   {card.type} - {card.id}

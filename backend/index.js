@@ -96,7 +96,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('new-player',(data)=>{
-    console.log('new-player',data,rooms)
+    console.log('new-player',data,JSON.stringify(rooms))
     if(!data.room || !data.username){
       socket.emit('error',{
         message:'username or room was not included'

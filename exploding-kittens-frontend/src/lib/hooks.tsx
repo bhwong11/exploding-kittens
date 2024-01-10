@@ -510,13 +510,11 @@ export const useTurns = ({initListeners}:UseTurnsProps={initListeners:false})=>{
   const players = getNonLostPlayers(allPlayers ?? [])
   
   //will be false if no winner
-  console.log('deck length',players,!!deck?.length,players.filter(player=>!player.lose).length===1,(players?.find(player=>!player.lose) ?? false) )
   const winner: Player | boolean = (allPlayers ?? [])?.length>1
     && !!deck?.length
     && players.filter(player=>!player.lose).length===1 
     && (players?.find(player=>!player.lose) ?? false)
-  
-    console.log('WINNER',winner)
+
 
   const {attemptActivate,currentActions} = useActivateResponseHandlers()
   const {drawCard} = useGameActions()

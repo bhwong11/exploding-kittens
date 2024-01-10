@@ -51,14 +51,12 @@ export default {
             ...user.toObject(),
             ranking:idx+1
           }))
-          console.log('USERS',results)
           redisClient.set(data.allUsersCacheKey,JSON.stringify(results),{
             //expire cache in one week
             EX: data.oneWeekInMilliSec
           })
         }
         
-        console.log('USERS2',results)
         return {
           fromCache,
           results:[...results]
@@ -100,7 +98,7 @@ export default {
 
       }catch(e){
 
-        throw new GraphQLError(`something went wrong ${err}`, {
+        throw new GraphQLError(`something went wrong, ${e}`, {
           extensions: {
             code: 'INTERNAL_SERVER_ERROR',
           },
