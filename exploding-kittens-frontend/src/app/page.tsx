@@ -29,6 +29,9 @@ export default function Home() {
       game Over - disable everything save wins to users
       disable create game assets once created
       add READ.ME
+      // update players on room card. Bug on create room
+      // redirect to new room on create
+      // 
       <RoomList />
       <button onClick={createRoom}>Create New Room</button>
     </main>

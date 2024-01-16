@@ -7,7 +7,7 @@ export default {
   Query:{
     getUser: async (_,{username})=>{
       try{
-
+        //maybe will not return null
         const user = await User.findOne({username})
         if(!user){
           throw new GraphQLError(`username not found ${username}`, {
