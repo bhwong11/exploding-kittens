@@ -16,7 +16,6 @@ const ActionPrompt = ()=>{
 
   useEffect(()=>{
     if(!socket) return
-    console.log('SOCKET ACTIVE')
     socket?.on('next-action-response',(data)=>{
       if(data.formObject)setPreviousSubmitData(data.formObject)
       setResponseCount(data.actionPromptIndex)
