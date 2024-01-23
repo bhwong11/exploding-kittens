@@ -7,7 +7,7 @@ export default {
   Query:{
     getUser: async (_,{username})=>{
       try{
-
+        //maybe will not return null
         const user = await User.findOne({username})
         if(!user){
           throw new GraphQLError(`username not found ${username}`, {
@@ -37,25 +37,26 @@ export default {
     
       try{
         if(redisClient.isReady){
-          console.log('IS READY')
           existingCache = await redisClient.get(data.allUsersCacheKey)
         }
 
-        console.log('EXISTING CACHE',existingCache)
         
         //return cached value if existing
         if(existingCache){
           results = JSON.parse(existingCache)
           fromCache = true
         }else{
-          console.log('else!!')
-          results = await User.find().populate('rooms')
+          const users = await User.find().populate('rooms').sort({'wins': -1})
+          results = users.map((user,idx)=>({
+            ...user.toObject(),
+            ranking:idx+1
+          }))
           redisClient.set(data.allUsersCacheKey,JSON.stringify(results),{
             //expire cache in one week
             EX: data.oneWeekInMilliSec
           })
         }
-    
+        
         return {
           fromCache,
           results:[...results]
@@ -97,7 +98,7 @@ export default {
 
       }catch(e){
 
-        throw new GraphQLError(`something went wrong ${err}`, {
+        throw new GraphQLError(`something went wrong, ${e}`, {
           extensions: {
             code: 'INTERNAL_SERVER_ERROR',
           },

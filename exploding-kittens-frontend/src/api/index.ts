@@ -27,7 +27,7 @@ const getAllUsersWithRanking = async ()=>{
 }
 
 //should probably seperate out password/username changes into their own request
-const updateUserByUsername = async ({username,updateData={}}:UpdateUserByUsernameProps)=>{
+const updateUserByUsername = async ({username,updateUserInput={}}:UpdateUserByUsernameProps)=>{
   //add frontend authenication check
   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/users/username/${username}`, {
         method: 'PATCH',
@@ -36,7 +36,7 @@ const updateUserByUsername = async ({username,updateData={}}:UpdateUserByUsernam
         },
         credentials: 'include',
         body: JSON.stringify({
-          ...updateData
+          ...updateUserInput
         }),
       })
 

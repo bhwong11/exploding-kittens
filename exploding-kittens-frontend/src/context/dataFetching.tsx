@@ -6,6 +6,8 @@ import { usePlayerContext } from "@/context/players"
 // this also will need to update local states like allowedUsers
 // to save a refresh saved gamestate 'get-saved-room' and 'save-room' events are used
 // leaving here since we can potenitally can change to REST api endpoint for cleaner error handling
+
+//leaving for legacy but now not in use due to react query taking on functionality
 export const useFetchToContext = ()=>{
   
   const {

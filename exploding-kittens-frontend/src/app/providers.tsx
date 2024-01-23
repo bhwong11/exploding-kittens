@@ -5,6 +5,7 @@ import { RoomsContextProvider } from '@/context/rooms'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from 'react';
+import { isDevMode } from "@/lib/helpers"
 
 const Providers = ({ children }: { children: React.ReactNode })=> {
   const [client] = useState(new QueryClient());
@@ -15,7 +16,7 @@ const Providers = ({ children }: { children: React.ReactNode })=> {
             <GameStateContextProvider>
               <RoomsContextProvider>
               {children}
-              <ReactQueryDevtools/>
+              {isDevMode && <ReactQueryDevtools/>}
               </RoomsContextProvider>
             </GameStateContextProvider>
           </PlayerContextProvider>

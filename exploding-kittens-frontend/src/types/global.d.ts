@@ -9,7 +9,8 @@ declare global{
     rooms?: []
     _id?: string
     id?: number
-    username?: string
+    username?: string,
+    ranking?:number
   }
   type Room = {
     _id?: string
@@ -51,7 +52,12 @@ declare global{
   
   type UpdateUserByUsernameProps = {
     username:string,
-    updateData:updatedUserBody
+    updateUserInput:updatedUserBody
+  }
+
+  type usersWithRankingCache = {
+    fromCache: boolean,
+    results: User[]
   }
   //socket.io event types
   interface ServerToClientEvents {

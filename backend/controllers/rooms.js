@@ -1,5 +1,5 @@
 import Room from "../models/Room.js";
-import { rooms } from "../index.js";
+import { rooms } from "../socket/index.js";
 import { io } from "../index.js"
 
 const all = async (req,res)=>{

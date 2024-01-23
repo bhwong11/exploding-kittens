@@ -106,3 +106,7 @@ export const actionTypes = {
  export const socketEvents = {
   newPageBackend:'new-page-backend'
  } as const
+
+ export const reactQueryCacheKeys = {
+  users:'users'
+ }
