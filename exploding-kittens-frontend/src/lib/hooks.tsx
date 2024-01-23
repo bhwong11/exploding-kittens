@@ -180,7 +180,7 @@ export const useAsyncEmitSocketEvent = ()=>{
     emitData,
     eventDataCallBack,
     transitionCompletedCallback,
-    allowOnlyTurnPlayer = false
+    allowOnlyTurnPlayer = true
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
     
     setHasTransitionCompleted(false)
