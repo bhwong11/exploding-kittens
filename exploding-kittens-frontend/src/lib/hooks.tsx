@@ -152,7 +152,8 @@ export const useAsyncEmitSocketEvent = ()=>{
     trackedListenEvent:keyof ServerToClientEvents
     emitData:any
     eventDataCallBack?:Function
-    transitionCompletedCallback?:Function
+    transitionCompletedCallback?:Function,
+    allowOnlyTurnPlayer?:boolean
   }
 
   const [isPending,startTransition] = useTransition()
@@ -178,7 +179,8 @@ export const useAsyncEmitSocketEvent = ()=>{
     trackedListenEvent,
     emitData,
     eventDataCallBack,
-    transitionCompletedCallback
+    transitionCompletedCallback,
+    allowOnlyTurnPlayer = false
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
     
     setHasTransitionCompleted(false)
@@ -194,7 +196,7 @@ export const useAsyncEmitSocketEvent = ()=>{
       //socket?.off(trackedListenEvent)
       resolve(data)
     })
-    if(turnPlayer?.username === currentPlayer?.username){
+    if(!allowOnlyTurnPlayer || turnPlayer?.username === currentPlayer?.username){
       socket?.emit(eventName,emitData)
     }
     
