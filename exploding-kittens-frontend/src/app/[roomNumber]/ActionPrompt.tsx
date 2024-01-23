@@ -18,7 +18,6 @@ const ActionPrompt = ()=>{
     if(!socket) return
     console.log('SOCKET ACTIVE')
     socket?.on('next-action-response',(data)=>{
-      console.log('ntext action',data,actionPrompt)
       if(data.formObject)setPreviousSubmitData(data.formObject)
       setResponseCount(data.actionPromptIndex)
       if(data.complete){
