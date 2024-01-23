@@ -10,7 +10,6 @@ import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
 
 export const useRoomSocket = () => {
   const {
-    rooms,
     setRooms,
     setSocket
   } = useRoomsContext() || {}
@@ -19,7 +18,7 @@ export const useRoomSocket = () => {
 
   useEffect(() => {
     const findRooms = async () => {
-      await fetch('http://localhost:3000/rooms', {
+      await fetch(process.env.NEXT_PUBLIC_BACKEND_API as string + '/rooms', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -40,9 +39,7 @@ export const useRoomSocket = () => {
     }
 
     socket.on('new-room', data => {
-      const allRooms: Room[] = rooms || []
-      allRooms.push(data)
-      if (setRooms) setRooms(allRooms)
+      if (setRooms) setRooms(prev => [...prev, data])
     })
   }, [])
 }
