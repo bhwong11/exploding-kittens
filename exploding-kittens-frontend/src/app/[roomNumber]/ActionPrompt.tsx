@@ -37,7 +37,7 @@ const ActionPrompt = ()=>{
   
     <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
       <div className="flex min-h-full items-end justify-center p-4 text-center items-center">
-        <div className="flex flex-col items-center rounded-lg bg-white text-left shadow-xl transition-all my-8 w-full max-w-lg py-5">
+        <div className="flex flex-col items-center rounded-lg bg-white text-left shadow-xl transition-all my-8 w-full max-w-lg py-5 px-2">
         
         {!isAllPlayersActive && (
           <div className="bg-red-300">
