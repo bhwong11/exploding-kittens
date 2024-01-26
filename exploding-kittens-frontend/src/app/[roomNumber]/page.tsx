@@ -5,14 +5,13 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import {
   useInitGame,
-  usePlayerSocket,
-  useTurns
+  usePlayerSocket
 } from "@/lib/hooks"
 import { authenticate,isDevMode } from "@/lib/helpers"
 import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
-import WinnerSave from "../(components)/WinnerModal"
+import WinnerSave from "@/app/(components)/WinnerModal"
 
 
 type RoomParams = {
@@ -25,34 +24,21 @@ const Room = ({params}:RoomParams)=>{
   const router = useRouter()
   const {players,currentPlayer,setCurrentPlayer} = usePlayerContext() || {}
 
-  const {deck,discardPile} = useGameStateContext() || {}
-  const {winner} = useTurns() || {}
+  const {deck,discardPile,socket} = useGameStateContext() || {}
 
-  const [users,setUsers] = useState<User[] | null>(null)
   const [username,setUsername] = useState<string>("")
 
   const {createGameAssets} = useInitGame()
 
-  const {joinRoom, clearPlayers,clearGameState}= usePlayerSocket({initSocket:true})
-
-  type usersReturn = {
-    fromCache:boolean
-    results:User[]
-  }
-  useEffect(()=>{
-    //add to .env
-    fetch('http://localhost:3000/users')
-      .then((res)=>res.json())
-      .then((data:usersReturn)=>{
-        setUsers(data.results)
-      })
-  },[])
+  const {joinRoom, clearPlayers,clearGameState, leaveRoom}= usePlayerSocket({initSocket:true})
 
   useEffect(() => {
     if(isDevMode) return
     const setData = async () => {
       const playerData = await authenticate()
-      if (playerData && setCurrentPlayer) setCurrentPlayer(playerData)
+      if (playerData && setCurrentPlayer) {
+        setCurrentPlayer(playerData)
+      }
       else router.push('/auth/login')
     }
     if (!currentPlayer) {
@@ -61,14 +47,19 @@ const Room = ({params}:RoomParams)=>{
     }
   }, [])
 
+  useEffect(() => {
+    if(isDevMode) return
+    if(!currentPlayer?.username || !socket?.id) return
+    joinRoom({username:currentPlayer?.username,room:params.roomNumber })
+  }, [socket?.id, currentPlayer?.username])
+
   return (
     <div className="w-full">
       <WinnerSave/>
 
       Room Number: {params.roomNumber} <br/>
-      {JSON.stringify(players)} <br/>
-      {JSON.stringify(users)}
-      <div className="border border-black">
+      {JSON.stringify(players?.map(p=>p.username))} <br/>
+      {isDevMode && <div className="border border-black">
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
           e.preventDefault()
@@ -90,11 +81,18 @@ const Room = ({params}:RoomParams)=>{
             join room
           </button>
         </form>
+      </div>}
+      <div className="border border-black">
         <button onClick={clearPlayers} className="btn btn-blue">
             clear players
         </button>
         <button onClick={clearGameState} className="btn btn-blue">
             clear gameState
+        </button>
+        <button onClick={()=>(
+          leaveRoom()
+        )} className="btn btn-blue">
+            leave room
         </button>
         <SaveRefreshGame/>
       </div>
@@ -110,7 +108,7 @@ const Room = ({params}:RoomParams)=>{
         <button 
           onClick={createGameAssets} 
           className="btn btn-blue" 
-          disabled={players && players.length < 3 && !isDevMode}
+          disabled={players && players.length < 1 && !isDevMode}
         >
           create game assets(need at least one joined user for this to work)
         </button>

@@ -100,6 +100,10 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     currentSocket?.emit('clear-players')
   }
 
+  const leaveRoom = ():void=>{
+    currentSocket?.emit('leave-room')
+  }
+
   const clearGameState= ():void=>{
     currentSocket?.emit('clear-game-state')
   }
@@ -128,6 +132,7 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 
   return {
     joinRoom,
+    leaveRoom,
     isPlayerInRoom,
     clearPlayers,
     clearGameState,
