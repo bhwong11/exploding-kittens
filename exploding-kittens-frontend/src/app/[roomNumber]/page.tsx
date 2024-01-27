@@ -51,7 +51,7 @@ const Room = ({params}:RoomParams)=>{
     if(isDevMode) return
     if(!currentPlayer?.username || !socket?.id) return
     joinRoom({username:currentPlayer?.username,room:params.roomNumber })
-  }, [socket?.id, currentPlayer?.username])
+  }, [socket, currentPlayer?.username])
 
   return (
     <div className="w-full">
