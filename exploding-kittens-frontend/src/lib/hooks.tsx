@@ -1,3 +1,4 @@
+"use client"
 import { useEffect, useState, useTransition,useRef} from "react"
 import { io, Socket } from "socket.io-client"
 import { usePlayerContext } from "@/context/players"
@@ -63,12 +64,15 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     //add to .env
     if(!initSocket) return 
     socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
-    if(setSocket){
-      setSocket(socket)
-    }
 
     socket.on('all-players',data=>{
       if(setPlayers)setPlayers(data)
+    })
+
+    socket.on('connect', function() {
+      if(setSocket){
+        setSocket(socket)
+      }
     })
 
     socket.on('refresh-game-state',data=>{
@@ -89,7 +93,7 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
       socket?.disconnect();
     }
   },[])
-
+  
   const isPlayerInRoom = (username:string):boolean=>{
     return players?.map(player=>player.username).includes(username) ?? false
   }
@@ -98,6 +102,10 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 
   const clearPlayers= ():void=>{
     currentSocket?.emit('clear-players')
+  }
+
+  const leaveRoom = ():void=>{
+    currentSocket?.emit('leave-room')
   }
 
   const clearGameState= ():void=>{
@@ -128,6 +136,7 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 
   return {
     joinRoom,
+    leaveRoom,
     isPlayerInRoom,
     clearPlayers,
     clearGameState,

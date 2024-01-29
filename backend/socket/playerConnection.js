@@ -34,6 +34,24 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
     }
   })
 
+  socket.on('leave-room', () => {
+    const playerRoomNumber = Array.from(socket.rooms)[1]
+    socket.leave(playerRoomNumber)
+
+    if(rooms[playerRoomNumber]?.players){
+      const playerLeaving = rooms[playerRoomNumber]?.players?.find(
+        player=>player.socketId===socket.id
+      )
+      if(playerLeaving){
+        clearTimeout(timeoutIds[playerLeaving.username])
+      }
+
+      rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==socket.id)
+
+      io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
+    }
+  })
+
   socket.on('new-player',(data)=>{
     console.log('new-player',data,JSON.stringify(rooms))
     if(!data.room || !data.username){
@@ -42,6 +60,16 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       })
       console.log('username or room was not included')
       return
+    }
+
+    //if user is already in a room, they leave that room and join a new one
+    //only one room per user at a time
+    const playerRoomNumber = Array.from(socket.rooms)[1]
+    if(playerRoomNumber || playerRoomNumber===0){
+      socket.leave(playerRoomNumber)
+      if(rooms[playerRoomNumber]?.players){
+        rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==socket.id)
+      }
     }
 
     socket.join(data.room)
