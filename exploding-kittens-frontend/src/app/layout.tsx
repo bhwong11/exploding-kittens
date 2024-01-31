@@ -19,12 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} overflow-y-scroll`}>
-        <Navbar />
-        <div>
-          <Providers>
-            {children}
-          </Providers>
-        </div>
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   )
