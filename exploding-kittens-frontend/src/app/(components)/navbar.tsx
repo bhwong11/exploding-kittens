@@ -1,27 +1,27 @@
 'use client'
 import { usePlayerContext } from '@/context/players'
-
+import Link from 'next/link'
 export const Navbar = () => {
   const { currentPlayer } = usePlayerContext() || {}
 
   return (
-    <nav className="fixed w-full h-10 flex justify-between bg-slate-500 p-2">
+    <nav className='sticky flex top-0 left-0 items-center w-full h-12 bg-slate-500 justify-between p-5'>
       <div className="img-container">
         <img /> {/* Icon for site? */}
       </div>
       <div className="flex justify-end gap-5">
-        <a
-          href=""
+        <Link
+          href={"#"}
           className=""
         >
           {currentPlayer?.username || 'Login'}
-        </a>
-        <a
-          href=""
+        </Link>
+        <Link
+          href={"#"}
           className=""
         >
           Logout
-        </a>
+        </Link>
       </div>
     </nav>
   )
