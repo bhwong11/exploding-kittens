@@ -1,3 +1,4 @@
+"use client"
 import { useEffect, useState, useTransition,useRef} from "react"
 import { io, Socket } from "socket.io-client"
 import { usePlayerContext } from "@/context/players"
@@ -10,7 +11,6 @@ import { shuffleArray, getNonLostPlayers,isObjKey } from "@/lib/helpers"
 
 export const useRoomSocket = () => {
   const {
-    rooms,
     setRooms,
     setSocket
   } = useRoomsContext() || {}
@@ -19,7 +19,7 @@ export const useRoomSocket = () => {
 
   useEffect(() => {
     const findRooms = async () => {
-      await fetch('http://localhost:3000/rooms', {
+      await fetch(process.env.NEXT_PUBLIC_BACKEND_API as string + '/rooms', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -40,9 +40,7 @@ export const useRoomSocket = () => {
     }
 
     socket.on('new-room', data => {
-      const allRooms: Room[] = rooms || []
-      allRooms.push(data)
-      if (setRooms) setRooms(allRooms)
+      if (setRooms) setRooms(prev => [...prev, data])
     })
   }, [])
 }
@@ -66,12 +64,15 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     //add to .env
     if(!initSocket) return 
     socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
-    if(setSocket){
-      setSocket(socket)
-    }
 
     socket.on('all-players',data=>{
       if(setPlayers)setPlayers(data)
+    })
+
+    socket.on('connect', function() {
+      if(setSocket){
+        setSocket(socket)
+      }
     })
 
     socket.on('refresh-game-state',data=>{
@@ -92,7 +93,7 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
       socket?.disconnect();
     }
   },[])
-
+  
   const isPlayerInRoom = (username:string):boolean=>{
     return players?.map(player=>player.username).includes(username) ?? false
   }
@@ -101,6 +102,10 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 
   const clearPlayers= ():void=>{
     currentSocket?.emit('clear-players')
+  }
+
+  const leaveRoom = ():void=>{
+    currentSocket?.emit('leave-room')
   }
 
   const clearGameState= ():void=>{
@@ -131,6 +136,7 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 
   return {
     joinRoom,
+    leaveRoom,
     isPlayerInRoom,
     clearPlayers,
     clearGameState,
@@ -152,7 +158,8 @@ export const useAsyncEmitSocketEvent = ()=>{
     trackedListenEvent:keyof ServerToClientEvents
     emitData:any
     eventDataCallBack?:Function
-    transitionCompletedCallback?:Function
+    transitionCompletedCallback?:Function,
+    allowOnlyTurnPlayer?:boolean
   }
 
   const [isPending,startTransition] = useTransition()
@@ -178,7 +185,8 @@ export const useAsyncEmitSocketEvent = ()=>{
     trackedListenEvent,
     emitData,
     eventDataCallBack,
-    transitionCompletedCallback
+    transitionCompletedCallback,
+    allowOnlyTurnPlayer = true
   }:AsyncEmitProps)=>new Promise((resolve,reject)=>{
     
     setHasTransitionCompleted(false)
@@ -194,7 +202,7 @@ export const useAsyncEmitSocketEvent = ()=>{
       //socket?.off(trackedListenEvent)
       resolve(data)
     })
-    if(turnPlayer?.username === currentPlayer?.username){
+    if(!allowOnlyTurnPlayer || turnPlayer?.username === currentPlayer?.username){
       socket?.emit(eventName,emitData)
     }
     

@@ -156,7 +156,7 @@ export const useCardActions = ()=>{
   } = useGameStateContext() || {}
   const {players:allPlayers,currentPlayer,setPlayers} = usePlayerContext() || {}
   const {asyncEmit} = useAsyncEmitSocketEvent()
-  const {discardCards,addToDiscard} = useGameActions()
+  const {addToDiscard} = useGameActions()
 
   const players = getNonLostPlayers(allPlayers ?? [])
   const turnPlayer = players[(turnCount??0) % (players?.length ?? 1)]
@@ -392,7 +392,9 @@ export const useCardActions = ()=>{
       eventName:'action-prompt',
       trackedListenEvent:'action-prompt',
       emitData:actionTypes.favor,
+      allowOnlyTurnPlayer: false,
       eventDataCallBack: (data:typeof actionWithPrompts[number])=>{
+        console.log('setting action prompt, favor',data)
         if(!setActionPrompt) return
         setActionPrompt(actionPromptsData[data])
       },

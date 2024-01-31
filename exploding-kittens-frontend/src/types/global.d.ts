@@ -118,6 +118,7 @@ declare global{
     ['no-response']: (arg:{username:string}[]) => void
     ['allowed-users']:(arg:string[]) => void
     ['clear-players']: () => void
+    ['leave-room']: () => void
     ['clear-game-state']: () => void
     ['refresh-game-state']:() => void
     ['action-complete']:() => void

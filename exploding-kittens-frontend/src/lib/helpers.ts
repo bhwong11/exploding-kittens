@@ -55,18 +55,22 @@ export const getNonLostPlayers = (players:Player[])=>(
 
 export const authenticate = async () => {
   console.log('auth')
-  return await fetch('http://localhost:3000/auth/refresh', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include'
-  })
-  .then(res => res.json())
-  .then((user: User) => {
-    console.log('user:', user)
-    return user
-  })
+  try{
+    return await fetch('http://localhost:3000/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    })
+    .then(res => res.json())
+    .then((user: User) => {
+      console.log('user:', user)
+      return user
+    })
+  }catch(err){
+    console.error(err)
+  }
 }
 
 export const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
