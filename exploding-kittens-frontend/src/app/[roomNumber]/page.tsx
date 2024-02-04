@@ -12,6 +12,7 @@ import Hand from "@/app/[roomNumber]/hand"
 import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
 import WinnerSave from "@/app/(components)/WinnerModal"
+import CardPile from "@/app/[roomNumber]/CardPile"
 
 
 type RoomParams = {
@@ -99,11 +100,9 @@ const Room = ({params}:RoomParams)=>{
       <OtherPlayers/>
       <div className="border border-black">
         <Hand/>
-        <div className="h-[15rem] overflow-y-scroll">
-          Deck:
-          {JSON.stringify(deck)}
-          Discard:
-          {JSON.stringify(discardPile)}
+        <div className="flex">
+          <CardPile title="draw deck:" cards={deck ?? []}/>
+          <CardPile title="discard:" cards={discardPile ?? []}/>
         </div>
         <button 
           onClick={createGameAssets} 
