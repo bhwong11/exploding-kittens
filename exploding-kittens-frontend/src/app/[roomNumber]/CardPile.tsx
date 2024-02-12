@@ -24,7 +24,7 @@ const CardPile = ({
         height:`${height+cardOffset*cardsDisplayed}rem`
       }}>
         {Array.from(Array(cardsDisplayed).keys()).map((idx)=>(
-          <div className="w-[5rem] border border-black bg-gray-500 shadow-lg relative" style={{
+          <div className="w-[5rem] border border-black bg-gray-500 shadow-lg relative text-center flex flex-col justify-center" style={{
             height: `${height}rem`,
             width:`${width}rem`,
             top: `-${idx===0?0:idx*(height-cardOffset)}rem`,
