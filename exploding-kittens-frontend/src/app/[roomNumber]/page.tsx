@@ -13,6 +13,7 @@ import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
 import WinnerSave from "@/app/(components)/WinnerModal"
 import CardPile from "@/app/[roomNumber]/CardPile"
+import { minPlayersForGame } from "@/data"
 
 
 type RoomParams = {
@@ -60,6 +61,7 @@ const Room = ({params}:RoomParams)=>{
 
       Room Number: {params.roomNumber} <br/>
       {JSON.stringify(players?.map(p=>p.username))} <br/>
+      remaining players needed: {minPlayersForGame-(players?.length || 0)} <br/>
       {isDevMode && <div className="border border-black">
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
@@ -107,7 +109,7 @@ const Room = ({params}:RoomParams)=>{
         <button 
           onClick={createGameAssets} 
           className="btn btn-blue" 
-          disabled={players && players.length < 1 && !isDevMode}
+          disabled={players && players.length < minPlayersForGame && !isDevMode}
         >
           create game assets(need at least one joined user for this to work)
         </button>

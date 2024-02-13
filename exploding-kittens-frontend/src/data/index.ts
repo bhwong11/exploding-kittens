@@ -110,3 +110,5 @@ export const actionTypes = {
  export const reactQueryCacheKeys = {
   users:'users'
  }
+
+ export const minPlayersForGame = 3
