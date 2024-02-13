@@ -347,6 +347,9 @@ export const useActivateResponseHandlers=({implActions}:UseActivateResponseHandl
     cardId?:number,
     cardType?:CardType
   )=>{
+    //don't allow activate if players less than 1
+    if(players.length<=1) return
+
     //add card discard
     let newAllowedUsers: string[] = (
       players
