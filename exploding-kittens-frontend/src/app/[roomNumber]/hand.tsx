@@ -67,6 +67,8 @@ const Hand = ()=>{
     !isActionValidFromCards(selectedCards)
     || !isPlayerTurn
     || !isAllPlayersActive
+    //disable if not at least 2 players
+    || (players?.length || 0)<=1
   )
 
   const cardActivateHandler = ()=>{
