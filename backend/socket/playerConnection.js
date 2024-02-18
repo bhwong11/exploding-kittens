@@ -47,9 +47,35 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       }
 
       rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==socket.id)
+      //set next owner
+      rooms[playerRoomNumber].players[0].isOwner = true
 
       io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
     }
+  })
+
+  socket.on('new-owner',(data)=>{
+    console.log('new-owner',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+
+      if(!rooms[playerRoom].players.find(player=>player.username===data.username)){
+        socket.emit('error',{
+          message:'username is not in list of players'
+        })
+      }
+
+      rooms[playerRoom].players = rooms[playerRoom].players.map(player=>({
+        ...player,
+        isOwner:player.username===data.username?true:false
+      }))
+    }else{
+      socket.emit('error',{
+        message:'username or room was not included'
+      })
+    }
+
+    io.sockets.emit('all-players',rooms[playerRoom].players ?? [])
   })
 
   socket.on('new-player',(data)=>{
@@ -127,6 +153,8 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
     rooms[data.room]?.players.push({
       ...data,
       active:true,
+      //check if room has players, if not add owner
+      isOwner: !rooms[data.room]?.players.length,
       socketId: socket.id,
       lose:false,
       cards:[]

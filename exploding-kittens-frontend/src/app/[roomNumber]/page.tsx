@@ -13,6 +13,7 @@ import OtherPlayers from "@/app/[roomNumber]/OtherPlayers"
 import SaveRefreshGame from "@/app/[roomNumber]/SaveRestartGame"
 import WinnerSave from "@/app/(components)/WinnerModal"
 import CardPile from "@/app/[roomNumber]/CardPile"
+import ChooseOwner from "@/app/[roomNumber]/ChooseOwner"
 
 
 type RoomParams = {
@@ -31,7 +32,10 @@ const Room = ({params}:RoomParams)=>{
 
   const {createGameAssets} = useInitGame()
 
-  const {joinRoom, clearPlayers,clearGameState, leaveRoom}= usePlayerSocket({initSocket:true})
+  const {joinRoom, clearPlayers,clearGameState, leaveRoom, currentPlayerFromList}= usePlayerSocket({initSocket:true})
+
+  const isCreateAssetsDisabled = (players && players.length < 1 && !isDevMode) 
+    || !currentPlayerFromList?.isOwner
 
   useEffect(() => {
     if(isDevMode) return
@@ -60,6 +64,10 @@ const Room = ({params}:RoomParams)=>{
 
       Room Number: {params.roomNumber} <br/>
       {JSON.stringify(players?.map(p=>p.username))} <br/>
+      {JSON.stringify(players)} <br/>
+      
+      <ChooseOwner/>
+
       {isDevMode && <div className="border border-black">
         <h1>join room</h1>
         <form onSubmit={(e:React.FormEvent)=>{
@@ -106,10 +114,11 @@ const Room = ({params}:RoomParams)=>{
         </div>
         <button 
           onClick={createGameAssets} 
-          className="btn btn-blue" 
-          disabled={players && players.length < 1 && !isDevMode}
+          className="btn btn-blue has-tooltip" 
+          disabled={isCreateAssetsDisabled}
         >
           create game assets(need at least one joined user for this to work)
+          <span className='tooltip rounded shadow-lg p-1 bg-gray-100 text-black -mt-8'>You need to be owner(first joined) to click</span>
         </button>
       </div>
     </div>

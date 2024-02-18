@@ -66,6 +66,7 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
 
     socket.on('all-players',data=>{
+      console.log('all-playuers data',data)
       if(setPlayers)setPlayers(data)
     })
 
@@ -100,6 +101,8 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 
   const isAllPlayersActive = players?.every(player=>player.active)
 
+  const currentPlayerFromList = players?.find(player=>player.username === currentPlayer?.username)
+
   const clearPlayers= ():void=>{
     currentSocket?.emit('clear-players')
   }
@@ -108,8 +111,14 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     currentSocket?.emit('leave-room')
   }
 
-  const clearGameState= ():void=>{
+  const clearGameState = ():void=>{
     currentSocket?.emit('clear-game-state')
+  }
+
+  const chooseOwner = (username:string):void=>{
+    currentSocket?.emit('new-owner',{
+      username: username
+    })
   }
 
   type JoinRoomProps = {
@@ -140,7 +149,9 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     isPlayerInRoom,
     clearPlayers,
     clearGameState,
-    isAllPlayersActive
+    isAllPlayersActive,
+    currentPlayerFromList,
+    chooseOwner
   }
 }
 

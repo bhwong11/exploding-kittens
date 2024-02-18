@@ -29,3 +29,11 @@ body {
 .btn-blue:hover {
   @apply bg-blue-700 disabled:bg-slate-200;
 }
+
+.tooltip {
+  @apply invisible absolute;
+}
+
+.has-tooltip:hover .tooltip {
+  @apply visible z-50;
+}
