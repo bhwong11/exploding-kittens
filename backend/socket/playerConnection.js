@@ -112,7 +112,6 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       }
     }
 
-    socket.join(data.room)
     if(!rooms[data.room]){
       rooms[data.room] = {
         players:[],
@@ -146,6 +145,7 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
         return
       }
       //if rejoining a room
+      socket.join(data.room)
       rooms[data.room].players[existingPlayerIndex].active = true
       rooms[data.room].players[existingPlayerIndex].socketId = socket.id
       clearTimeout(timeoutIds[rooms[data.room].players[existingPlayerIndex].username])
@@ -162,6 +162,7 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       console.log('room is already full')
       return
     }
+    socket.join(data.room)
 
     rooms[data.room]?.players.push({
       ...data,
