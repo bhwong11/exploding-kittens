@@ -66,7 +66,6 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     socket = io(process.env.NEXT_PUBLIC_BACKEND_API as string)
 
     socket.on('all-players',data=>{
-      console.log('all-playuers data',data)
       if(setPlayers)setPlayers(data)
     })
 
@@ -107,8 +106,8 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     currentSocket?.emit('clear-players')
   }
 
-  const leaveRoom = ():void=>{
-    currentSocket?.emit('leave-room')
+  const leaveRoom = (username?:string):void=>{
+    currentSocket?.emit('leave-room',{...(username?{username}:{})})
   }
 
   const clearGameState = ():void=>{

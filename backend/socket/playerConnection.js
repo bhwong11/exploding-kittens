@@ -34,19 +34,33 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
     }
   })
 
-  socket.on('leave-room', () => {
+  socket.on('leave-room', (data) => {
+    console.log('loeav room')
     const playerRoomNumber = Array.from(socket.rooms)[1]
-    socket.leave(playerRoomNumber)
+
+    let leavingSocketId = socket.id
+
+    if(data.username){
+      const playerFromUsername = rooms[playerRoomNumber]?.players.find(player=>player.username===data.username)
+      if(playerFromUsername?.socketId){        
+        leavingSocketId = playerFromUsername?.socketId
+        const playerFromUsernameSocket = io.sockets.sockets.get(playerFromUsername?.socketId)
+        playerFromUsernameSocket.leave(playerRoomNumber)
+      }
+    }else{
+      socket.leave(playerRoomNumber)
+    }
 
     if(rooms[playerRoomNumber]?.players){
       const playerLeaving = rooms[playerRoomNumber]?.players?.find(
-        player=>player.socketId===socket.id
+        player=>player.socketId===leavingSocketId
       )
+      
       if(playerLeaving){
         clearTimeout(timeoutIds[playerLeaving.username])
       }
 
-      rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==socket.id)
+      rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==leavingSocketId)
       //set next owner
       rooms[playerRoomNumber].players[0].isOwner = true
 
@@ -98,6 +112,7 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       }
     }
 
+    socket.join(data.room)
     if(!rooms[data.room]){
       rooms[data.room] = {
         players:[],
@@ -157,7 +172,6 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       lose:false,
       cards:[]
     })
-    socket.join(data.room)
     emitToPlayerRoom(io,socket,'all-players',rooms[data.room]?.players ?? [])
   })
 }
