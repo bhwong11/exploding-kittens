@@ -97,9 +97,7 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
         rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==socket.id)
       }
     }
-    //add in functionality to check if existing before joining room
 
-    socket.join(data.room)
     if(!rooms[data.room]){
       rooms[data.room] = {
         players:[],
@@ -159,6 +157,7 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       lose:false,
       cards:[]
     })
+    socket.join(data.room)
     emitToPlayerRoom(io,socket,'all-players',rooms[data.room]?.players ?? [])
   })
 }
