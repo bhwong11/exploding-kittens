@@ -26,6 +26,8 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
           allRooms[playerRoomNumber].players = allRooms[playerRoomNumber]?.players?.filter(
             player=>player.socketId!==socket.id
           )
+          allRooms[playerRoomNumber].players[0].isOwner = true
+          socket.leave(playerRoomNumber)
           io.sockets.emit('all-players',allRooms[playerRoomNumber].players ?? [])
         },disconnectTimeout,rooms)
       }
@@ -35,7 +37,6 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
   })
 
   socket.on('leave-room', (data) => {
-    console.log('loeav room')
     const playerRoomNumber = Array.from(socket.rooms)[1]
 
     let leavingSocketId = socket.id
