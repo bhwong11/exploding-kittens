@@ -100,16 +100,24 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
 
   const isAllPlayersActive = players?.every(player=>player.active)
 
+  const currentPlayerFromList = players?.find(player=>player.username === currentPlayer?.username)
+
   const clearPlayers= ():void=>{
     currentSocket?.emit('clear-players')
   }
 
-  const leaveRoom = ():void=>{
-    currentSocket?.emit('leave-room')
+  const leaveRoom = (username?:string):void=>{
+    currentSocket?.emit('leave-room',{...(username?{username}:{})})
   }
 
-  const clearGameState= ():void=>{
+  const clearGameState = ():void=>{
     currentSocket?.emit('clear-game-state')
+  }
+
+  const chooseOwner = (username:string):void=>{
+    currentSocket?.emit('new-owner',{
+      username: username
+    })
   }
 
   type JoinRoomProps = {
@@ -140,7 +148,9 @@ export const usePlayerSocket=({initSocket}:UsePlayerSocketProps={initSocket:fals
     isPlayerInRoom,
     clearPlayers,
     clearGameState,
-    isAllPlayersActive
+    isAllPlayersActive,
+    currentPlayerFromList,
+    chooseOwner
   }
 }
 

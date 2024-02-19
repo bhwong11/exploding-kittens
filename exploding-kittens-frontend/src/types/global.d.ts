@@ -31,6 +31,7 @@ declare global{
   type Player = {
     username: string
     active: boolean,
+    isOwner:boolean,
     lose: boolean
     cards: Card[]
   }
@@ -109,6 +110,7 @@ declare global{
   interface ClientToServerEvents {
     ['new-page']: (arg:{message:string}) => void
     ['new-player']: (arg:{username:string}) => void
+    ['new-owner']: (arg:{username:string}) => void
     ['all-players']: (arg:Player[]) => void
     ['activate-attempt']: (arg:{
       actions:Actions[],
@@ -118,7 +120,7 @@ declare global{
     ['no-response']: (arg:{username:string}[]) => void
     ['allowed-users']:(arg:string[]) => void
     ['clear-players']: () => void
-    ['leave-room']: () => void
+    ['leave-room']: (arg:{username?:string}) => void
     ['clear-game-state']: () => void
     ['refresh-game-state']:() => void
     ['action-complete']:() => void

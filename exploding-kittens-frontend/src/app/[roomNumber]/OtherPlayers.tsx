@@ -1,7 +1,10 @@
 import { usePlayerContext } from "@/context/players";
+import { usePlayerSocket } from "@/lib/hooks";
 
 const OtherPlayers = ()=>{
   const {players, currentPlayer} = usePlayerContext() || {}
+  const {currentPlayerFromList, leaveRoom} = usePlayerSocket()
+
   return(
     <div>
       Other Players
@@ -22,6 +25,10 @@ const OtherPlayers = ()=>{
           <div>
             lost: {JSON.stringify(player?.lose)}
           </div>
+          {currentPlayerFromList?.isOwner && (
+            <button className="btn btn-blue" onClick={()=>leaveRoom(player?.username ?? '')}>
+              remove player from room
+            </button>)}
         </div>
       ))}
     </div>

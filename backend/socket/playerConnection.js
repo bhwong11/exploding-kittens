@@ -26,6 +26,8 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
           allRooms[playerRoomNumber].players = allRooms[playerRoomNumber]?.players?.filter(
             player=>player.socketId!==socket.id
           )
+          allRooms[playerRoomNumber].players[0].isOwner = true
+          socket.leave(playerRoomNumber)
           io.sockets.emit('all-players',allRooms[playerRoomNumber].players ?? [])
         },disconnectTimeout,rooms)
       }
@@ -34,22 +36,61 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
     }
   })
 
-  socket.on('leave-room', () => {
+  socket.on('leave-room', (data) => {
     const playerRoomNumber = Array.from(socket.rooms)[1]
-    socket.leave(playerRoomNumber)
+
+    let leavingSocketId = socket.id
+
+    if(data.username){
+      const playerFromUsername = rooms[playerRoomNumber]?.players.find(player=>player.username===data.username)
+      if(playerFromUsername?.socketId){        
+        leavingSocketId = playerFromUsername?.socketId
+        const playerFromUsernameSocket = io.sockets.sockets.get(playerFromUsername?.socketId)
+        playerFromUsernameSocket.leave(playerRoomNumber)
+      }
+    }else{
+      socket.leave(playerRoomNumber)
+    }
 
     if(rooms[playerRoomNumber]?.players){
       const playerLeaving = rooms[playerRoomNumber]?.players?.find(
-        player=>player.socketId===socket.id
+        player=>player.socketId===leavingSocketId
       )
+      
       if(playerLeaving){
         clearTimeout(timeoutIds[playerLeaving.username])
       }
 
-      rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==socket.id)
+      rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==leavingSocketId)
+      //set next owner
+      rooms[playerRoomNumber].players[0].isOwner = true
 
       io.sockets.emit('all-players',rooms[playerRoomNumber].players ?? [])
     }
+  })
+
+  socket.on('new-owner',(data)=>{
+    console.log('new-owner',data)
+    const playerRoom = Array.from(socket.rooms)[1]
+    if(rooms[playerRoom]){
+
+      if(!rooms[playerRoom].players.find(player=>player.username===data.username)){
+        socket.emit('error',{
+          message:'username is not in list of players'
+        })
+      }
+
+      rooms[playerRoom].players = rooms[playerRoom].players.map(player=>({
+        ...player,
+        isOwner:player.username===data.username?true:false
+      }))
+    }else{
+      socket.emit('error',{
+        message:'username or room was not included'
+      })
+    }
+
+    io.sockets.emit('all-players',rooms[playerRoom].players ?? [])
   })
 
   socket.on('new-player',(data)=>{
@@ -71,9 +112,7 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
         rooms[playerRoomNumber].players = rooms[playerRoomNumber].players.filter(player=>player.socketId!==socket.id)
       }
     }
-    //add in functionality to check if existing before joining room
 
-    socket.join(data.room)
     if(!rooms[data.room]){
       rooms[data.room] = {
         players:[],
@@ -107,6 +146,7 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
         return
       }
       //if rejoining a room
+      socket.join(data.room)
       rooms[data.room].players[existingPlayerIndex].active = true
       rooms[data.room].players[existingPlayerIndex].socketId = socket.id
       clearTimeout(timeoutIds[rooms[data.room].players[existingPlayerIndex].username])
@@ -123,10 +163,13 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
       console.log('room is already full')
       return
     }
+    socket.join(data.room)
 
     rooms[data.room]?.players.push({
       ...data,
       active:true,
+      //check if room has players, if not add owner
+      isOwner: !rooms[data.room]?.players.length,
       socketId: socket.id,
       lose:false,
       cards:[]
