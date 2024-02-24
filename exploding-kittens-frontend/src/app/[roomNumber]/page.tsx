@@ -65,7 +65,7 @@ const Room = ({params}:RoomParams)=>{
       Room Number: {params.roomNumber} <br/>
       {JSON.stringify(players?.map(p=>p.username))} <br/>
       {JSON.stringify(players)} <br/>
-      
+
       <ChooseOwner/>
 
       {isDevMode && <div className="border border-black">
@@ -110,7 +110,7 @@ const Room = ({params}:RoomParams)=>{
         <Hand/>
         <div className="flex">
           <CardPile title="draw deck:" cards={deck ?? []}/>
-          <CardPile title="discard:" cards={discardPile ?? []}/>
+          <CardPile title="discard:" cards={discardPile ?? []} showFront={true}/>
         </div>
         <button 
           onClick={createGameAssets} 
