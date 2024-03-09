@@ -26,7 +26,9 @@ export const playerConnectionEventActions = (io,socket,rooms)=>{
           allRooms[playerRoomNumber].players = allRooms[playerRoomNumber]?.players?.filter(
             player=>player.socketId!==socket.id
           )
-          allRooms[playerRoomNumber].players[0].isOwner = true
+          if(allRooms[playerRoomNumber].players[0]){
+            allRooms[playerRoomNumber].players[0].isOwner = true
+          }
           socket.leave(playerRoomNumber)
           io.sockets.emit('all-players',allRooms[playerRoomNumber].players ?? [])
         },disconnectTimeout,rooms)

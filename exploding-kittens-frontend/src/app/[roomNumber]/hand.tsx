@@ -6,6 +6,7 @@ import { useState, useEffect,lazy, Suspense,memo} from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
 import { isDevMode } from "@/lib/helpers"
+import { zoomTime } from "../../../tailwind.config"
 
 const ResponseAction = lazy(()=>import("@/app/[roomNumber]/ResponseAction"))
 const ActionPrompt = lazy(()=>import("@/app/[roomNumber]/ActionPrompt"))
@@ -13,6 +14,10 @@ const ActionPrompt = lazy(()=>import("@/app/[roomNumber]/ActionPrompt"))
 
 type MultiCardActionsType = {
   [key: number]: Actions
+}
+
+interface DisplayCard extends Card {
+  className: string
 }
 
 const multiCardActions:MultiCardActionsType = {
@@ -23,8 +28,11 @@ const multiCardActions:MultiCardActionsType = {
 const Hand = ()=>{
   const {players,currentPlayer} =  usePlayerContext() || {}
   const {socket,turnCount,attackTurns} =  useGameStateContext() || {}
+
   const [selectedCards,setSelectedCards]=useState<Card[]>([])
+  const [cardsDisplay,setCardsDisplay]=useState<DisplayCard[]>([])
   const [allowedResponseUsers,setAllowedResponseUsers] = useState<string[]>([])
+
   const {endTurn, turnPlayer, isTurnEnd} = useTurns({initListeners:true})
   const {attemptActivate} = useActivateResponseHandlers()
   const {isActionValidFromCards,validResponseCards} = useGameActions()
@@ -48,6 +56,18 @@ const Hand = ()=>{
   useEffect(()=>{
     setSelectedCards(selectedCards.filter(card=>((currentCards?.map(c=>c.id) ?? []).includes(card.id))))
   },[currentCards?.length])
+
+  useEffect(()=>{
+    const removedCardsIdMap: {[key: number]: DisplayCard} = cardsDisplay
+      ?.filter(dCard=>!currentCards?.find(cCard=>dCard.id===cCard.id))
+      ?.reduce((all,next)=>({...all,[next.id]:next}),{})
+
+    const newCardsDisplay = cardsDisplay?.map(card=>removedCardsIdMap?.[card.id] ? {...card,className:"animate-zoomOut"} : card) || []
+    setCardsDisplay(newCardsDisplay)
+    if(!cardsDisplay?.length) setCardsDisplay(currentCards?.map(card=>({...card,className:''})) ?? [])
+    setTimeout(()=>{ setCardsDisplay(currentCards?.map(card=>({...card,className:''})) ?? []) },zoomTime*1000)
+
+  },[currentCards?.map(card=>card.id).join('')])
 
   useEffect(()=>{
     if(!socket) return
@@ -101,12 +121,13 @@ const Hand = ()=>{
   <div>
     hand:
     <div className="flex flex-wrap gap-1">
-      {currentCards?.map(card=>(
+      {cardsDisplay?.map(card=>(
         <div
           key={`card-${card.id}`}
           className={classNames(
-            "hand-card border border-black w-[10rem] break-words animate-zoomIn",
-            {"border-2 border-blue-500":selectedCards.find(c=>card.id===c.id)}
+            `hand-card border border-black w-[10rem] break-words animate-zoomIn`,
+            {"border-2 border-blue-500":selectedCards.find(c=>card.id===c.id)},
+            {[card.className]:true}
           )}
           onClick={()=>cardOnClickHandler(card)}
         >
