@@ -10,21 +10,15 @@ const config: Config = {
     extend: {
         // that is animation class
         animation: {
-          fade: 'fadeOut 5s ease-in-out',
+          zoomIn: 'zoomIn 0.3s ease-in-out',
         },
   
-        // that is actual animation
-        keyframes: theme => ({
-          fadeOut: {
-            '0%': { backgroundColor: 'red' },
-            '100%': { backgroundColor: 'transparent' },
+        keyframes: {
+          zoomIn: {
+            '0%': { transform: 'scale(0, 0)' },
+            '100%': { transform: 'scale(1, 1)' },
           },
-        }),
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
+        }
     },
   },
   plugins: [],

@@ -105,7 +105,7 @@ const Hand = ()=>{
         <div
           key={`card-${card.id}`}
           className={classNames(
-            "hand-card border border-black w-[10rem] break-words fade",
+            "hand-card border border-black w-[10rem] break-words animate-zoomIn",
             {"border-2 border-blue-500":selectedCards.find(c=>card.id===c.id)}
           )}
           onClick={()=>cardOnClickHandler(card)}
@@ -113,12 +113,6 @@ const Hand = ()=>{
           {JSON.stringify(card)}
         </div>
       ))}
-    </div>
-    <div>
-      <img 
-        src="https://1.bp.blogspot.com/--zMhNmNAoz8/XxjIzhknvmI/AAAAAAABVnc/g8QKVuHfqs470tB2v24ck9zaSumKFskmACNcBGAsYHQ/w1200-h630-p-k-no-nu/the-legend-of-korra-1230079.jpeg"
-      />
-      <h1 className="fixed relative top-[-30rem] text-5xl text-center font-bold px-[10rem]">When you raise the price of a hot dog above $1.50</h1>
     </div>
     <div className="border border-black">
 
