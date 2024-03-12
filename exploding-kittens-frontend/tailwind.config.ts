@@ -8,11 +8,17 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
+        // that is animation class
+        animation: {
+          zoomIn: 'zoomIn 0.3s ease-in-out',
+        },
+  
+        keyframes: {
+          zoomIn: {
+            '0%': { transform: 'scale(0, 0)' },
+            '100%': { transform: 'scale(1, 1)' },
+          },
+        }
     },
   },
   plugins: [],

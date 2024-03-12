@@ -100,12 +100,12 @@ const Hand = ()=>{
   return (
   <div>
     hand:
-    <div className="flex flex-wrap">
+    <div className="flex flex-wrap gap-1">
       {currentCards?.map(card=>(
         <div
           key={`card-${card.id}`}
           className={classNames(
-            "hand-card border border-black w-[10rem] break-words",
+            "hand-card border border-black w-[10rem] break-words animate-zoomIn",
             {"border-2 border-blue-500":selectedCards.find(c=>card.id===c.id)}
           )}
           onClick={()=>cardOnClickHandler(card)}
