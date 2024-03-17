@@ -2,7 +2,7 @@ import { usePlayerContext } from "@/context/players"
 import { useGameStateContext } from "@/context/gameState"
 import { useActivateResponseHandlers, useTurns, usePlayerSocket } from "@/lib/hooks"
 import { useGameActions } from "@/lib/actions"
-import { useState, useEffect,lazy, Suspense,memo} from "react"
+import { useState, useEffect,lazy, Suspense,memo, useRef} from "react"
 import classNames from 'classnames'
 import { actionTypes } from "@/data"
 import { isDevMode } from "@/lib/helpers"
@@ -57,6 +57,8 @@ const Hand = ()=>{
     setSelectedCards(selectedCards.filter(card=>((currentCards?.map(c=>c.id) ?? []).includes(card.id))))
   },[currentCards?.length])
 
+  const displayAnimationTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(()=>{
     const removedCardsIdMap: {[key: number]: DisplayCard} = cardsDisplay
       ?.filter(dCard=>!currentCards?.find(cCard=>dCard.id===cCard.id))
@@ -65,7 +67,11 @@ const Hand = ()=>{
     const newCardsDisplay = cardsDisplay?.map(card=>removedCardsIdMap?.[card.id] ? {...card,className:"animate-zoomOut"} : card) || []
     setCardsDisplay(newCardsDisplay)
     if(!cardsDisplay?.length) setCardsDisplay(currentCards?.map(card=>({...card,className:''})) ?? [])
-    setTimeout(()=>{ setCardsDisplay(currentCards?.map(card=>({...card,className:''})) ?? []) },zoomTime*1000)
+    //case when 2 changes before happen
+    if(displayAnimationTimeout.current) clearTimeout(displayAnimationTimeout.current)
+    displayAnimationTimeout.current = setTimeout(()=>{ 
+      setCardsDisplay(currentCards?.map(card=>({...card,className:''})) ?? []) 
+    },zoomTime*1000)
 
   },[currentCards?.map(card=>card.id).join('')])
 
