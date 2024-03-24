@@ -7,6 +7,7 @@ import classNames from 'classnames'
 import { actionTypes } from "@/data"
 import { isDevMode } from "@/lib/helpers"
 import { zoomTime } from "../../../tailwind.config"
+import CardInfo from "@/app/[roomNumber]/CardInfo"
 
 const ResponseAction = lazy(()=>import("@/app/[roomNumber]/ResponseAction"))
 const ActionPrompt = lazy(()=>import("@/app/[roomNumber]/ActionPrompt"))
@@ -137,7 +138,8 @@ const Hand = ()=>{
           )}
           onClick={()=>cardOnClickHandler(card)}
         >
-          {JSON.stringify(card)}
+          {/* {JSON.stringify(card)} */}
+          <CardInfo card={card}/>
         </div>
       ))}
     </div>

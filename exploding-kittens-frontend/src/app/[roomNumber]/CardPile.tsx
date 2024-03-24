@@ -42,7 +42,7 @@ const CardPile = ({
             top: `-${idx===0?0:idx*(height-cardOffset)}rem`,
             left:`${idx===0?0:idx*cardOffset}rem`,
             backgroundColor,
-            ...(showFront?generateCardFrontProps(cards[idx]):{}),
+            ...(showFront?generateCardFrontProps(cards[cards.length-1]):{}),
           }}>
             <div className="bg-gray-300">
               {idx===cardsDisplayed-1 && `cards: ${cards.length}`}
